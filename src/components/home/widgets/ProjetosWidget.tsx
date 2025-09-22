@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { Spin, Input, Select } from 'antd';
 import { getProjetos } from '../../../services/projetos';
@@ -25,24 +26,32 @@ const ProjetosWidget: React.FC = () => {
 
 		useEffect(() => {
 			async function fetchData() {
-				setLoading(true);
-				try {
-					const [{ projetos: allProjetos }, allUsuarios] = await Promise.all([
-						getProjetos(),
-						getUsuarios(),
-					]);
-					setUsuarios(allUsuarios);
-					const userId = Number(localStorage.getItem('user_id'));
-					const filtered = allProjetos.filter(p =>
-						(p.responsavel_id === userId || (p.usuarios_anexados && p.usuarios_anexados.includes(userId)))
-					);
-					setProjetos(filtered);
-				} finally {
-					setLoading(false);
-				}
+					setLoading(true);
+					try {
+							const [{ projetos: allProjetos }, allUsuarios] = await Promise.all([
+									getProjetos(),
+									getUsuarios(),
+							]);
+							setUsuarios(allUsuarios);
+							const userId = Number(localStorage.getItem('user_id'));
+							
+							console.log("Original Projects:", allProjetos);
+							console.log("Filtering for user ID:", userId);
+
+							const filtered = allProjetos.filter(p =>
+									p.responsavel_id === userId ||
+									(p.anexados && p.anexados.some(anexado => anexado.id === userId))
+							);
+							
+							console.log("Filtered Projects:", filtered);
+							setProjetos(filtered);
+
+					} finally {
+							setLoading(false);
+					}
 			}
 			fetchData();
-		}, []);
+	}, []);
 
 		// Calcula o tamanho do card com base no tamanho do container
 		useLayoutEffect(() => {
@@ -109,11 +118,10 @@ const ProjetosWidget: React.FC = () => {
 					}
 					window.removeEventListener('resize', updateScrollButtons);
 				};
-				// eslint-disable-next-line
 			}, [projetosFiltrados.length, cardWidth]);
 
 		return (
-			<div className="w-full h-full overflow-hidden flex flex-col">
+			<div className="w-full h-full overflow-hidden p-2 flex flex-col">
 				<div className="flex flex-row gap-2 mb-2 items-center flex-shrink-0">
 					<Input
 						size="small"
@@ -236,6 +244,7 @@ const ProjetosWidget: React.FC = () => {
 					projeto={selectedProjeto}
 					usuarios={usuarios}
 					open={!!selectedProjeto}
+					canEditProjeto={false}
 					onClose={() => setSelectedProjeto(null)}
 					onAddEtapa={() => {}}
 					onSelectEtapa={() => {}}

@@ -1,9 +1,9 @@
-import React from 'react';
-import { Modal, List, Button, Input, Select, Space, Typography, Popconfirm } from 'antd';
-import { FolderOpenOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
+import { Modal, List, Button, Input, Select, Space, Typography, Popconfirm, Descriptions, Divider, Tag } from 'antd';
+import { FolderOpenOutlined, EditOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import type { Projeto } from '../../types/projeto';
 import type { Usuario } from '../../types/usuario';
-import type { Etapa } from '../../types/etapa';
+import type { Etapa, StatusEtapaEnum } from '../../types/etapa';
 
 interface ProjetoDetailModalProps {
   projeto: Projeto | null;
@@ -16,209 +16,329 @@ interface ProjetoDetailModalProps {
   onUpdateEtapa: (etapa: Partial<Etapa> & { id: number }) => void;
   onDeleteEtapa: (etapaId: number) => void;
   loading?: boolean;
+  // --- NEW PROP ADDED ---
+  canEditProjeto?: boolean;
 }
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
 
 const statusOptions = [
-  { value: 'NI', label: 'Não Iniciada' },
-  { value: 'EA', label: 'Em Andamento' },
-  { value: 'C', label: 'Concluída' },
-  { value: 'P', label: 'Pausada' },
+  { value: 'NI', label: 'Não Iniciada', color: 'default' },
+  { value: 'EA', label: 'Em Andamento', color: 'processing' },
+  { value: 'C', label: 'Concluída', color: 'success' },
+  { value: 'P', label: 'Pausada', color: 'warning' },
 ];
 
-const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({ projeto, usuarios, open, onClose, onAddEtapa, onSelectEtapa, onUpdateProjeto, onUpdateEtapa, onDeleteEtapa, loading }) => {
-  const [showAdd, setShowAdd] = React.useState(false);
-  const [editProjeto, setEditProjeto] = React.useState(false);
-  const [editEtapaId, setEditEtapaId] = React.useState<number | null>(null);
-  // Local state for etapa editing
-  const [etapaEditFields, setEtapaEditFields] = React.useState<{
-    nome: string;
-    status: import('../../types/etapa').StatusEtapaEnum;
-    descricao: string;
-    data_inicio: string;
-    data_prazo: string;
-    data_fim: string;
-  } | null>(null);
-  const [nome, setNome] = React.useState('');
-  const [status, setStatus] = React.useState<import('../../types/etapa').StatusEtapaEnum>('NI');
-  const [descricao, setDescricao] = React.useState('');
-  const [data_inicio, setDataInicio] = React.useState('');
-  const [data_prazo, setDataPrazo] = React.useState('');
-  const [data_fim, setDataFim] = React.useState('');
-  // Projeto edit state (must always be called)
-  const [editNome, setEditNome] = React.useState('');
-  const [editDescricao, setEditDescricao] = React.useState('');
-  const [editStatus, setEditStatus] = React.useState<'NI' | 'EA' | 'C' | 'P'>('NI');
-  const [editPrioridade, setEditPrioridade] = React.useState<'UT' | 'AL' | 'MD' | 'BA'>('MD');
-  const [editCategoria, setEditCategoria] = React.useState<'DV' | 'MK' | 'OT'>('OT');
-  const [editResponsavel, setEditResponsavel] = React.useState<number | undefined>(undefined);
-  const [editDataInicio, setEditDataInicio] = React.useState('');
-  const [editDataPrazo, setEditDataPrazo] = React.useState('');
-  const [editDataFim, setEditDataFim] = React.useState('');
-  const [editUsuariosAnexados, setEditUsuariosAnexados] = React.useState<number[]>([]);
-  React.useEffect(() => {
+const getStatusTag = (status: string) => {
+  const option = statusOptions.find(opt => opt.value === status);
+  return <Tag color={option?.color || 'default'}>{option?.label || status}</Tag>;
+};
+
+const priorityOptions = [
+    { value: 'UT', label: 'Urgente' },
+    { value: 'AL', label: 'Alta' },
+    { value: 'MD', label: 'Média' },
+    { value: 'BA', label: 'Baixa' },
+];
+
+const categoryOptions = [
+    { value: 'DV', label: 'Desenvolvimento' },
+    { value: 'MK', label: 'Marketing' },
+    { value: 'OT', label: 'Outro' },
+];
+
+// Helper to format date for input[type="date"]
+const formatDateForInput = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+  return dateString.split('T')[0];
+};
+
+
+const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
+  projeto,
+  usuarios,
+  open,
+  onClose,
+  onAddEtapa,
+  onSelectEtapa,
+  onUpdateProjeto,
+  onUpdateEtapa,
+  onDeleteEtapa,
+  loading,
+  // --- DESTRUCTURED WITH DEFAULT VALUE ---
+  canEditProjeto = true,
+}) => {
+  // State for toggling UI sections
+  const [isAddingEtapa, setIsAddingEtapa] = useState(false);
+  const [isEditingProjeto, setIsEditingProjeto] = useState(false);
+  const [editingEtapaId, setEditingEtapaId] = useState<number | null>(null);
+
+  // Consolidated state for new etapa form
+  const [newEtapa, setNewEtapa] = useState<Partial<Etapa>>({ nome: '', status: 'NI', descricao: '', data_inicio: '', data_prazo: '', data_fim: '', usuario_id: undefined });
+
+  // Consolidated state for the project being edited
+  const [editedProjeto, setEditedProjeto] = useState<Projeto | null>(null);
+  
+  // Consolidated state for the etapa being edited
+  const [editedEtapa, setEditedEtapa] = useState<Partial<Etapa> & { id: number } | null>(null);
+
+  useEffect(() => {
     if (projeto) {
-      setEditNome(projeto.nome);
-      setEditDescricao(projeto.descricao || '');
-      setEditStatus(projeto.status);
-      setEditPrioridade(projeto.prioridade);
-      setEditCategoria(projeto.categoria);
-      setEditResponsavel(projeto.responsavel_id);
-      setEditDataInicio(projeto.data_inicio || '');
-      setEditDataPrazo(projeto.data_prazo || '');
-      setEditDataFim(projeto.data_fim || '');
-      setEditUsuariosAnexados(projeto.usuarios_anexados || []);
+      const projectWithNormalizedUsers = { ...projeto } as Projeto;
+      if (projectWithNormalizedUsers.anexados && !projectWithNormalizedUsers.usuarios_anexados) {
+        projectWithNormalizedUsers.usuarios_anexados = (projectWithNormalizedUsers.anexados as Usuario[])
+          .filter(item => item && typeof item.id !== 'undefined')
+          .map(user => user.id);
+      }
+      setEditedProjeto(projectWithNormalizedUsers);
     }
+    setIsEditingProjeto(false);
+    setIsAddingEtapa(false);
+    setEditingEtapaId(null);
   }, [projeto, open]);
-  if (!projeto) return null;
+
+  const handleUpdateProjeto = () => {
+    if (editedProjeto) {
+      onUpdateProjeto(editedProjeto);
+      setIsEditingProjeto(false);
+    }
+  };
+
+  const handleCancelEditProjeto = () => {
+    setEditedProjeto(projeto); // Revert changes
+    setIsEditingProjeto(false);
+  }
+
+  const handleAddEtapa = () => {
+    const payload = { ...newEtapa };
+    
+    const formattedPayload: Partial<Etapa> = {
+      ...payload,
+      projeto_id: projeto?.id,
+      data_inicio: payload.data_inicio ? new Date(`${payload.data_inicio}T00:00:00`).toISOString() : undefined,
+      data_prazo: payload.data_prazo ? new Date(`${payload.data_prazo}T00:00:00`).toISOString() : undefined,
+      data_fim: payload.data_fim ? new Date(`${payload.data_fim}T00:00:00`).toISOString() : undefined,
+    };
+    
+    Object.keys(formattedPayload).forEach(key => {
+        if (formattedPayload[key as keyof Etapa] === undefined) {
+            delete formattedPayload[key as keyof Etapa];
+        }
+    });
+
+    onAddEtapa(formattedPayload);
+    setNewEtapa({ nome: '', status: 'NI', descricao: '', data_inicio: '', data_prazo: '', data_fim: '', usuario_id: undefined });
+    setIsAddingEtapa(false);
+  }
+
+  const handleStartEditEtapa = (etapa: Etapa) => {
+    setEditingEtapaId(etapa.id);
+    setEditedEtapa({ ...etapa });
+  };
+
+  const handleCancelEditEtapa = () => {
+    setEditingEtapaId(null);
+    setEditedEtapa(null);
+  };
+  
+  const handleUpdateEtapa = () => {
+    if (editedEtapa) {
+      const payload = { ...editedEtapa };
+
+      const formattedPayload = {
+        ...payload,
+        data_inicio: payload.data_inicio ? new Date(`${payload.data_inicio.split('T')[0]}T00:00:00`).toISOString() : undefined,
+        data_prazo: payload.data_prazo ? new Date(`${payload.data_prazo.split('T')[0]}T00:00:00`).toISOString() : undefined,
+        data_fim: payload.data_fim ? new Date(`${payload.data_fim.split('T')[0]}T00:00:00`).toISOString() : undefined,
+      };
+
+      Object.keys(formattedPayload).forEach(key => {
+        if (formattedPayload[key as keyof typeof formattedPayload] === undefined) {
+            delete formattedPayload[key as keyof typeof formattedPayload];
+        }
+      });
+      
+      onUpdateEtapa(formattedPayload as Partial<Etapa> & { id: number });
+      handleCancelEditEtapa();
+    }
+  };
+
+  if (!projeto || !editedProjeto) return null;
+
   return (
     <Modal
-      title={editProjeto ? 'Editar Projeto' : projeto.nome}
       open={open}
       onCancel={onClose}
       footer={null}
-      width={800}
-      className="rounded-lg"
+      width={900}
+      title={
+        <Space align="center" size="middle">
+            <FolderOpenOutlined style={{ color: '#1890ff' }} />
+            <Title level={4} style={{ margin: 0 }}>{editedProjeto.nome}</Title>
+        </Space>
+      }
     >
-      <div className="space-y-3 p-2">
-        <div className="flex items-center gap-2 text-xl font-semibold text-blue-700">
-          <FolderOpenOutlined />
-          {editProjeto ? (
-            <Input value={editNome} onChange={e => setEditNome(e.target.value)} className="w-1/2" />
-          ) : (
-            projeto.nome
-          )}
-          <Button type="link" onClick={() => setEditProjeto(v => !v)}>{editProjeto ? 'Cancelar' : 'Editar Projeto'}</Button>
-          {editProjeto && (
-            <Button type="primary" onClick={() => {
-              onUpdateProjeto({
-                id: projeto.id,
-                nome: editNome,
-                descricao: editDescricao,
-                status: editStatus as 'NI' | 'EA' | 'C' | 'P',
-                prioridade: editPrioridade as 'UT' | 'AL' | 'MD' | 'BA',
-                categoria: editCategoria as 'DV' | 'MK' | 'OT',
-                responsavel_id: editResponsavel,
-                data_inicio: editDataInicio,
-                data_prazo: editDataPrazo,
-                data_fim: editDataFim,
-                usuarios_anexados: editUsuariosAnexados,
-              });
-              setEditProjeto(false);
-            }}>Salvar</Button>
-          )}
+      <div className="space-y-4 pt-4">
+        <div className="flex justify-end gap-2">
+            {/* --- CONDITIONAL RENDERING APPLIED --- */}
+            {!isEditingProjeto ? (
+                canEditProjeto && <Button icon={<EditOutlined />} onClick={() => setIsEditingProjeto(true)}>Editar Projeto</Button>
+            ) : (
+                <>
+                    <Button icon={<CloseCircleOutlined />} onClick={handleCancelEditProjeto}>Cancelar</Button>
+                    <Button type="primary" icon={<SaveOutlined />} onClick={handleUpdateProjeto}>Salvar Projeto</Button>
+                </>
+            )}
         </div>
-        <div className="flex flex-wrap gap-4 text-base text-gray-600">
-          <span>Prioridade: {editProjeto ? <Select value={editPrioridade} onChange={v => setEditPrioridade(v as 'UT' | 'AL' | 'MD' | 'BA')} options={['UT','AL','MD','BA'].map(v=>({value:v,label:v}))} style={{width:100}} /> : <span className="font-medium">{projeto.prioridade}</span>}</span>
-          <span>Categoria: {editProjeto ? <Select value={editCategoria} onChange={v => setEditCategoria(v as 'DV' | 'MK' | 'OT')} options={['DV','MK','OT'].map(v=>({value:v,label:v}))} style={{width:120}} /> : <span className="font-medium">{projeto.categoria}</span>}</span>
-          <span>Status: {editProjeto ? <Select value={editStatus} onChange={v => setEditStatus(v as 'NI' | 'EA' | 'C' | 'P')} options={statusOptions} style={{width:150}} /> : <span className="font-medium">{projeto.status}</span>}</span>
-        </div>
-        <div className="text-base text-gray-600">Responsável: {editProjeto ? <Select value={editResponsavel} onChange={setEditResponsavel} options={usuarios.map(u=>({value:u.id,label:u.nome}))} style={{width:200}} /> : <span className="font-medium">{usuarios.find(u => u.id === projeto.responsavel_id)?.nome || projeto.responsavel_id}</span>}</div>
-        <div className="text-base text-gray-600">Usuários Anexados: {editProjeto ? (
-          <Select
-            mode="multiple"
-            value={editUsuariosAnexados}
-            onChange={setEditUsuariosAnexados}
-            options={usuarios.map(u => ({ value: u.id, label: u.nome }))}
-            style={{ minWidth: 250 }}
-            placeholder="Selecione usuários para anexar"
-          />
-        ) : (
-          <span className="font-medium">
-            {(projeto.usuarios_anexados && projeto.usuarios_anexados.length > 0)
-              ? projeto.usuarios_anexados.map(id => usuarios.find(u => u.id === id)?.nome || id).join(', ')
-              : '-'}
-          </span>
-        )}
-        </div>
-        <div className="text-base text-gray-600">Descrição: {editProjeto ? <Input.TextArea value={editDescricao} onChange={e=>setEditDescricao(e.target.value)} /> : <span className="font-medium">{projeto.descricao || '-'}</span>}</div>
-        <div className="text-base text-gray-600">Início: {editProjeto ? <Input value={editDataInicio} onChange={e=>setEditDataInicio(e.target.value)} type="date" style={{width:150}} /> : <span className="font-medium">{projeto.data_inicio || '-'}</span>} | Prazo: {editProjeto ? <Input value={editDataPrazo} onChange={e=>setEditDataPrazo(e.target.value)} type="date" style={{width:150}} /> : <span className="font-medium">{projeto.data_prazo || '-'}</span>} | Fim: {editProjeto ? <Input value={editDataFim} onChange={e=>setEditDataFim(e.target.value)} type="date" style={{width:150}} /> : <span className="font-medium">{projeto.data_fim || '-'}</span>}</div>
-        <div className="text-base text-gray-600">Anexos: <span className="font-medium">{(Array.isArray(projeto.anexados) ? projeto.anexados.length : 0)}</span></div>
-        <div className="text-base text-gray-600 mb-2">
-          Etapas: <span className="font-semibold">{Array.isArray(projeto.etapas) ? projeto.etapas.length : 0}</span>
-          <Button type="link" onClick={() => setShowAdd(v => !v)}>{showAdd ? 'Cancelar' : 'Adicionar Etapa'}</Button>
-        </div>
-        {showAdd && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-2 flex flex-col gap-2">
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome da etapa" />
-              <Select value={status} onChange={v => setStatus(v as import('../../types/etapa').StatusEtapaEnum)} options={statusOptions} style={{ width: 200 }} />
-              <Input.TextArea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Descrição" />
-              <Space>
-                <Input value={data_inicio} onChange={e => setDataInicio(e.target.value)} placeholder="Data início" type="date" style={{ width: 150 }} />
-                <Input value={data_prazo} onChange={e => setDataPrazo(e.target.value)} placeholder="Prazo" type="date" style={{ width: 150 }} />
-                <Input value={data_fim} onChange={e => setDataFim(e.target.value)} placeholder="Data fim" type="date" style={{ width: 150 }} />
-              </Space>
-              <Button type="primary" loading={loading} onClick={() => {
-                onAddEtapa({
-                  nome,
-                  status: status as import('../../types/etapa').StatusEtapaEnum,
-                  descricao, data_inicio, data_prazo, data_fim,
-                  projeto_id: projeto.id,
-                  usuario_id: projeto.responsavel_id
-                });
-                setNome(''); setStatus('NI'); setDescricao(''); setDataInicio(''); setDataPrazo(''); setDataFim(''); setShowAdd(false);
-              }}>Salvar Etapa</Button>
-            </Space>
-          </div>
-        )}
-        <List
-          size="large"
-          header={<span className="font-semibold text-gray-700">Etapas</span>}
-          dataSource={Array.isArray(projeto.etapas) ? projeto.etapas : []}
-          locale={{ emptyText: 'Nenhuma etapa.' }}
-          renderItem={etapa => {
-            if (editEtapaId === etapa.id && etapaEditFields) {
-              return (
-                <List.Item className="pl-2 flex flex-col gap-2 bg-gray-50">
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Input value={etapaEditFields.nome} onChange={e => setEtapaEditFields(f => f ? { ...f, nome: e.target.value } : f)} />
-                    <Select value={etapaEditFields.status} onChange={v => setEtapaEditFields(f => f ? { ...f, status: v } : f)} options={statusOptions} style={{ width: 200 }} />
-                    <Input.TextArea value={etapaEditFields.descricao} onChange={e => setEtapaEditFields(f => f ? { ...f, descricao: e.target.value } : f)} />
-                    <Space>
-                      <Input value={etapaEditFields.data_inicio} onChange={e => setEtapaEditFields(f => f ? { ...f, data_inicio: e.target.value } : f)} type="date" style={{ width: 150 }} />
-                      <Input value={etapaEditFields.data_prazo} onChange={e => setEtapaEditFields(f => f ? { ...f, data_prazo: e.target.value } : f)} type="date" style={{ width: 150 }} />
-                      <Input value={etapaEditFields.data_fim} onChange={e => setEtapaEditFields(f => f ? { ...f, data_fim: e.target.value } : f)} type="date" style={{ width: 150 }} />
-                    </Space>
-                    <Button type="primary" onClick={() => {
-                      if (onUpdateEtapa) {
-                        onUpdateEtapa({
-                          ...etapa,
-                          ...etapaEditFields,
-                          id: etapa.id
-                        });
+
+        <Descriptions bordered column={2} size="small">
+          <Descriptions.Item label="Nome do Projeto">
+            {isEditingProjeto ? <Input value={editedProjeto.nome} onChange={e => setEditedProjeto(p => p ? { ...p, nome: e.target.value } : null)} /> : <strong>{editedProjeto.nome}</strong>}
+          </Descriptions.Item>
+          <Descriptions.Item label="Responsável">
+            {isEditingProjeto ? <Select value={editedProjeto.responsavel_id} onChange={val => setEditedProjeto(p => p ? { ...p, responsavel_id: val } : null)} options={usuarios.map(u => ({ value: u.id, label: u.nome }))} style={{ width: '100%' }} /> : (usuarios.find(u => u.id === editedProjeto.responsavel_id)?.nome || 'N/A')}
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Status">
+            {isEditingProjeto ? <Select value={editedProjeto.status} onChange={val => setEditedProjeto(p => p ? { ...p, status: val } : null)} options={statusOptions.map(s=> ({value: s.value, label: s.label}))} style={{ width: '100%' }} /> : getStatusTag(editedProjeto.status)}
+          </Descriptions.Item>
+           <Descriptions.Item label="Prioridade">
+            {isEditingProjeto ? <Select value={editedProjeto.prioridade} onChange={val => setEditedProjeto(p => p ? { ...p, prioridade: val } : null)} options={priorityOptions} style={{ width: '100%' }} /> : editedProjeto.prioridade}
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Categoria">
+            {isEditingProjeto ? <Select value={editedProjeto.categoria} onChange={val => setEditedProjeto(p => p ? { ...p, categoria: val } : null)} options={categoryOptions} style={{ width: '100%' }} /> : categoryOptions.find(c=>c.value === editedProjeto.categoria)?.label}
+          </Descriptions.Item>
+          <Descriptions.Item label="Anexos">
+            {Array.isArray(editedProjeto.anexados) ? editedProjeto.anexados.length : 0}
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Data de Início" span={1}>
+             {isEditingProjeto ? <Input type="date" value={formatDateForInput(editedProjeto.data_inicio)} onChange={e => setEditedProjeto(p => p ? { ...p, data_inicio: e.target.value } : null)} /> : (formatDateForInput(editedProjeto.data_inicio) || '-')}
+          </Descriptions.Item>
+          <Descriptions.Item label="Prazo Final" span={1}>
+             {isEditingProjeto ? <Input type="date" value={formatDateForInput(editedProjeto.data_prazo)} onChange={e => setEditedProjeto(p => p ? { ...p, data_prazo: e.target.value } : null)} /> : (formatDateForInput(editedProjeto.data_prazo) || '-')}
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Descrição" span={2}>
+            {isEditingProjeto ? <Input.TextArea value={editedProjeto.descricao || ''} onChange={e => setEditedProjeto(p => p ? { ...p, descricao: e.target.value } : null)} rows={3}/> : (editedProjeto.descricao || '-')}
+          </Descriptions.Item>
+           <Descriptions.Item label="Usuários Anexados" span={2}>
+            {isEditingProjeto ? (
+              <Select mode="multiple" value={editedProjeto.usuarios_anexados} onChange={val => setEditedProjeto(p => p ? { ...p, usuarios_anexados: val } : null)} options={usuarios.map(u => ({ value: u.id, label: u.nome }))} style={{ width: '100%' }} placeholder="Selecione usuários"/>
+            ) : (
+                (editedProjeto.usuarios_anexados && editedProjeto.usuarios_anexados.length > 0)
+                ? editedProjeto.usuarios_anexados.map(id => usuarios.find(u => u.id === id)?.nome || id).join(', ')
+                : '-'
+            )}
+          </Descriptions.Item>
+        </Descriptions>
+
+        <Divider />
+
+        <div>
+            <div className="flex justify-between items-center mb-2">
+                <Title level={5}>Etapas ({Array.isArray(editedProjeto.etapas) ? editedProjeto.etapas.length : 0})</Title>
+                <Button type="primary" ghost icon={<PlusOutlined />} onClick={() => setIsAddingEtapa(v => !v)}>
+                    {isAddingEtapa ? 'Cancelar' : 'Adicionar Etapa'}
+                </Button>
+            </div>
+
+            {isAddingEtapa && (
+              <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-dashed">
+                <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                    <Input value={newEtapa.nome} onChange={e => setNewEtapa(s => ({...s, nome: e.target.value}))} placeholder="Nome da nova etapa" />
+                    <Input.TextArea value={newEtapa.descricao} onChange={e => setNewEtapa(s => ({...s, descricao: e.target.value}))} placeholder="Descrição da etapa" rows={2}/>
+                    <Select
+                      showSearch
+                      placeholder="Selecione o responsável pela etapa"
+                      value={newEtapa.usuario_id}
+                      onChange={val => setNewEtapa(e => ({...e, usuario_id: val}))}
+                      options={usuarios.map(u => ({ value: u.id, label: u.nome }))}
+                      style={{ width: '100%' }}
+                      filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                       }
-                      setEditEtapaId(null);
-                      setEtapaEditFields(null);
-                    }}>Salvar</Button>
-                    <Popconfirm title="Tem certeza que deseja deletar esta etapa?" onConfirm={() => { onDeleteEtapa(etapa.id); setEditEtapaId(null); setEtapaEditFields(null); }} okText="Sim" cancelText="Não">
-                      <Button danger size="small">Deletar Etapa</Button>
-                    </Popconfirm>
-                    <Button type="link" onClick={() => { setEditEtapaId(null); setEtapaEditFields(null); }}>Cancelar</Button>
-                  </Space>
-                </List.Item>
-              );
-            }
-            return (
-              <List.Item className="pl-2 flex items-center gap-2 hover:bg-gray-100 cursor-pointer" onClick={() => onSelectEtapa(etapa)}>
-                <div className="flex flex-col flex-1">
-                  <Text strong>{etapa.nome}</Text>
-                  <Text type="secondary" className="text-xs">{etapa.descricao || '-'}</Text>
-                </div>
-                <span className="ml-2 px-2 py-0.5 rounded text-xs bg-gray-200 text-gray-700">{etapa.status || '-'}</span>
-                <Button type="link" onClick={e => { e.stopPropagation(); setEditEtapaId(etapa.id); setEtapaEditFields({
-                  nome: etapa.nome,
-                  status: etapa.status,
-                  descricao: etapa.descricao || '',
-                  data_inicio: etapa.data_inicio || '',
-                  data_prazo: etapa.data_prazo || '',
-                  data_fim: etapa.data_fim || ''
-                }); }}>Editar</Button>
-              </List.Item>
-            );
-          }}
-        />
+                    />
+                    <Space wrap>
+                        <Select value={newEtapa.status} onChange={val => setNewEtapa(s => ({...s, status: val as StatusEtapaEnum}))} options={statusOptions.map(s => ({value: s.value, label: s.label}))} style={{ width: 150 }} placeholder="Status" />
+                        <Input addonBefore="Início" value={newEtapa.data_inicio} onChange={e => setNewEtapa(s => ({...s, data_inicio: e.target.value}))} type="date" style={{ width: 200 }} />
+                        <Input addonBefore="Prazo" value={newEtapa.data_prazo} onChange={e => setNewEtapa(s => ({...s, data_prazo: e.target.value}))} type="date" style={{ width: 200 }} />
+                        <Input addonBefore="Fim" value={newEtapa.data_fim} onChange={e => setNewEtapa(s => ({...s, data_fim: e.target.value}))} type="date" style={{ width: 200 }} />
+                    </Space>
+                    <Button type="primary" loading={loading} onClick={handleAddEtapa} icon={<SaveOutlined />}>Salvar Etapa</Button>
+                </Space>
+              </div>
+            )}
+
+            <List
+              size="large"
+              dataSource={Array.isArray(editedProjeto.etapas) ? editedProjeto.etapas : []}
+              locale={{ emptyText: 'Nenhuma etapa cadastrada para este projeto.' }}
+              renderItem={etapa => {
+                  const isEditingThisEtapa = editingEtapaId === etapa.id && editedEtapa;
+                  if (isEditingThisEtapa) {
+                      return (
+                          <List.Item className="bg-blue-50 p-4 rounded-md">
+                             <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                                  <Input value={editedEtapa.nome} onChange={e => setEditedEtapa(et => et ? {...et, nome: e.target.value} : null)} placeholder="Nome da etapa" />
+                                  <Input.TextArea value={editedEtapa.descricao || ''} onChange={e => setEditedEtapa(et => et ? {...et, descricao: e.target.value} : null)} placeholder="Descrição" rows={2}/>
+                                  <Select
+                                    showSearch
+                                    placeholder="Selecione o responsável pela etapa"
+                                    value={editedEtapa.usuario_id}
+                                    onChange={val => setEditedEtapa(et => et ? {...et, usuario_id: val} : null)}
+                                    options={usuarios.map(u => ({ value: u.id, label: u.nome }))}
+                                    style={{ width: '100%' }}
+                                    filterOption={(input, option) =>
+                                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                    }
+                                  />
+                                  <Space wrap>
+                                      <Select value={editedEtapa.status} onChange={val => setEditedEtapa(et => et ? {...et, status: val as StatusEtapaEnum} : null)} options={statusOptions.map(s=> ({value: s.value, label: s.label}))} style={{ width: 150 }}/>
+                                      <Input addonBefore="Início" value={formatDateForInput(editedEtapa.data_inicio)} onChange={e => setEditedEtapa(et => et ? {...et, data_inicio: e.target.value} : null)} type="date" style={{ width: 200 }} />
+                                      <Input addonBefore="Prazo" value={formatDateForInput(editedEtapa.data_prazo)} onChange={e => setEditedEtapa(et => et ? {...et, data_prazo: e.target.value} : null)} type="date" style={{ width: 200 }} />
+                                      <Input addonBefore="Fim" value={formatDateForInput(editedEtapa.data_fim)} onChange={e => setEditedEtapa(et => et ? {...et, data_fim: e.target.value} : null)} type="date" style={{ width: 200 }} />
+                                  </Space>
+                                  <Space>
+                                      <Button type="primary" onClick={handleUpdateEtapa} icon={<SaveOutlined />}>Salvar</Button>
+                                      <Button onClick={handleCancelEditEtapa}>Cancelar</Button>
+                                       <Popconfirm title="Tem certeza que deseja deletar?" onConfirm={() => onDeleteEtapa(etapa.id)} okText="Sim" cancelText="Não">
+                                           <Button danger icon={<DeleteOutlined />}>Deletar</Button>
+                                       </Popconfirm>
+                                  </Space>
+                             </Space>
+                          </List.Item>
+                      );
+                  }
+
+                  const responsavel = usuarios.find(u => u.id === etapa.usuario_id);
+
+                  return (
+                      <List.Item
+                          actions={[
+                              <Button type="link" onClick={(e) => { e.stopPropagation(); handleStartEditEtapa(etapa); }}>Editar</Button>
+                          ]}
+                          className="hover:bg-gray-50 rounded-md cursor-pointer"
+                          onClick={() => onSelectEtapa(etapa)}
+                      >
+                          <List.Item.Meta
+                              title={<Text strong>{etapa.nome}</Text>}
+                              description={etapa.descricao || '-'}
+                          />
+                          <div className="flex items-center gap-4">
+                              {responsavel && (
+                                <Tag icon={<UserOutlined />}>
+                                  {responsavel.nome}
+                                </Tag>
+                              )}
+                              {getStatusTag(etapa.status)}
+                          </div>
+                      </List.Item>
+                  );
+              }}
+            />
+        </div>
       </div>
     </Modal>
   );

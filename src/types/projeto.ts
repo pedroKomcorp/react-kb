@@ -11,7 +11,13 @@ export type Projeto = {
   data_inicio?: string | null;
   data_prazo?: string | null;
   data_fim?: string | null;
-  anexados?: unknown[];
+  anexados: AnexadoUser[]; // Use the interface we defined above
   etapas?: Etapa[];
   usuarios_anexados?: number[]; // IDs of attached users
 };
+
+interface AnexadoUser {
+  id: number;
+  nome: string;
+  email: string;
+}

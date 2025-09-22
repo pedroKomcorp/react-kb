@@ -210,9 +210,9 @@ const ProjetosPage: React.FC = () => {
   );
 
   return (
-    <div className="h-screen w-screen pl-12 flex flex-col">
+    <div className="h-screen w-screen pl-6 flex flex-col">
       {/* Fixed Header */}
-      <div className="sticky top-0 z-10 bg-gray-100 p-6 flex flex-col md:flex-row md:items-center md:justify-between shadow-sm">
+      <div className="sticky top-0 z-10 bg-gray-100 pl-20 p-6 flex flex-col md:flex-row md:items-center md:justify-between shadow-sm">
         <Title level={2} className="mb-2 md:mb-0">Projetos</Title>
         <Space wrap>
           <Button
@@ -480,8 +480,23 @@ const ProjetosPage: React.FC = () => {
         open={!!detailModalProjeto}
         onClose={() => setDetailModalProjeto(null)}
         loading={loading}
-        onAddEtapa={() => {
-          fetchData();
+        onAddEtapa={async (newEtapa: Partial<Etapa>) => {
+          if (!newEtapa.nome || !newEtapa.projeto_id) {
+            message.error('O nome e o projeto são obrigatórios!');
+            return;
+          }
+          try {
+            setLoading(true);
+            await import('../../../services/etapas').then(m => 
+              m.createEtapa(newEtapa as Omit<Etapa, "id" | "created_at">)
+            );
+            message.success('Etapa adicionada com sucesso!');
+            fetchData();
+          } catch {
+            message.error('Erro ao adicionar etapa');
+          } finally {
+            setLoading(false);
+          }
         }}
         onSelectEtapa={etapa => {
           const projeto = projetos.find(p => p.id === etapa.projeto_id);

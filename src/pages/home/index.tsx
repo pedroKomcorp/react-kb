@@ -13,7 +13,6 @@ const allWidgets = [
   { key: 'humor', title: 'Humor', type: 'humor' },
 ];
 
-
 const defaultPositions = {
   projetos: { x: 10, y: 10, width: 865, height: 130 },
   humor: { x: 885, y: 10, width: 310, height: 120 },
