@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Form, Input, Button, Alert } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import api from '../../services/api';
+import { getUsuarios } from '../../services/usuarios';
 import axios from 'axios';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../hooks/UseAuth';
@@ -34,7 +35,17 @@ const LoginPage: React.FC = () => {
       const { access_token } = response.data;
 
       if (access_token) {
-        login(access_token); 
+        login(access_token);
+        // Buscar id do usuário pelo email (username)
+        try {
+          const usuarios = await getUsuarios();
+          const usuario = usuarios.find(u => u.email === values.username);
+          if (usuario) {
+            localStorage.setItem('user_id', usuario.id.toString());
+          }
+        } catch (e) {
+          console.log(e)
+        }
       }
 
     } catch (error: unknown) {

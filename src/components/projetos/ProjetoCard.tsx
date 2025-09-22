@@ -11,6 +11,8 @@ interface ProjetoCardProps {
   onClick: () => void;
   onAddEtapa: (projetoId: number) => void;
   onDeleteProjeto: (projetoId: number) => void;
+  showDeleteButton?: boolean;
+  showStatus?: boolean;
 }
 
 
@@ -32,20 +34,22 @@ const categoriaMap: Record<string, { color: string; label: string }> = {
   OT: { color: 'default', label: 'Outros' },
 };
 
-const ProjetoCard: React.FC<ProjetoCardProps> = ({ projeto, usuarios, onClick, onDeleteProjeto }) => (
+const ProjetoCard: React.FC<ProjetoCardProps> = ({ projeto, usuarios, onClick, onDeleteProjeto, showDeleteButton = true, showStatus = true }) => (
   <Card
-    className="rounded-lg shadow bg-white w-full transition-all duration-200 cursor-pointer hover:border-blue-400 border border-gray-200"
+    className="rounded-lg shadow bg-white w-full transition-all duration-200 cursor-pointer hover:border-blue-400 border border-gray-200 p-2"
     onClick={onClick}
     title={
-      <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
-          <FolderOpenOutlined className="text-blue-500 text-lg" />
-          <span className="font-semibold text-base md:text-lg">{projeto.nome}</span>
+      <div className="flex flex-col gap-0.5 md:flex-row md:items-center md:justify-between min-h-0">
+        <div className="flex items-center gap-1">
+          <FolderOpenOutlined className="text-blue-500 text-base" />
+          <span className="font-semibold text-sm md:text-base leading-tight">{projeto.nome}</span>
         </div>
-        <Space size={4} className="mt-2 md:mt-0">
-          <Tooltip title="Status do Projeto">
-            <Tag color={statusMap[projeto.status]?.color || 'default'}>{statusMap[projeto.status]?.label || projeto.status}</Tag>
-          </Tooltip>
+        <Space size={2} className="mt-1 md:mt-0">
+          {showStatus ? (
+            <Tooltip title="Status do Projeto">
+              <Tag color={statusMap[projeto.status]?.color || 'default'}>{statusMap[projeto.status]?.label || projeto.status}</Tag>
+            </Tooltip>
+          ) : null}
           <Tooltip title="Prioridade">
             <Tag color={prioridadeMap[projeto.prioridade]?.color || 'default'}>{prioridadeMap[projeto.prioridade]?.label || projeto.prioridade}</Tag>
           </Tooltip>
@@ -56,8 +60,8 @@ const ProjetoCard: React.FC<ProjetoCardProps> = ({ projeto, usuarios, onClick, o
       </div>
     }
   >
-    <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
-      <UserOutlined className="text-blue-400" />
+    <div className="flex items-center gap-1 text-gray-500 text-[11px] mb-1 min-h-0">
+      <UserOutlined className="text-blue-400 text-xs" />
       <span>
         Responsável: {
           usuarios.find(u => u.id === projeto.responsavel_id)
@@ -65,13 +69,15 @@ const ProjetoCard: React.FC<ProjetoCardProps> = ({ projeto, usuarios, onClick, o
             : `Responsável não encontrado`
         }
       </span>
-      <span className="ml-4 font-medium text-gray-600">Etapas: <span className="font-semibold">{projeto.etapas ? projeto.etapas.length : 0}</span></span>
+      <span className="ml-2 font-medium text-gray-600">Etapas: <span className="font-semibold">{projeto.etapas ? projeto.etapas.length : 0}</span></span>
     </div>
-    <div className="flex justify-end mt-2">
-      <Popconfirm title="Tem certeza que deseja deletar este projeto?" onConfirm={e => { e?.stopPropagation(); onDeleteProjeto(projeto.id); }} okText="Sim" cancelText="Não">
-        <Button danger size="small" onClick={e => e.stopPropagation()}>Deletar Projeto</Button>
-      </Popconfirm>
-    </div>
+    {showDeleteButton && (
+      <div className="flex justify-end mt-1">
+        <Popconfirm title="Tem certeza que deseja deletar este projeto?" onConfirm={e => { e?.stopPropagation(); onDeleteProjeto(projeto.id); }} okText="Sim" cancelText="Não">
+          <Button danger size="small" onClick={e => e.stopPropagation()}>Deletar Projeto</Button>
+        </Popconfirm>
+      </div>
+    )}
   </Card>
 );
 

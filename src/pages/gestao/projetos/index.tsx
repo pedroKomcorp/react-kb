@@ -210,7 +210,7 @@ const ProjetosPage: React.FC = () => {
   );
 
   return (
-    <div className="h-screen w-screen flex flex-col">
+    <div className="h-screen w-screen pl-12 flex flex-col">
       {/* Fixed Header */}
       <div className="sticky top-0 z-10 bg-gray-100 p-6 flex flex-col md:flex-row md:items-center md:justify-between shadow-sm">
         <Title level={2} className="mb-2 md:mb-0">Projetos</Title>

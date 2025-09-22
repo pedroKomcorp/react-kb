@@ -10,29 +10,26 @@ const Widget: React.FC<WidgetProps> = ({ title, children }) => (
     background: '#fff',
     border: '1px solid #ddd',
     borderRadius: 8,
-    padding: 16,
     boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
   }}>
     <h3
-      className="widget-drag-handle"
+      className="widget"
       style={{
         margin: 0,
         marginBottom: 8,
-        fontSize: 18,
+        fontSize: 14,
         cursor: 'grab',
         fontWeight: 600,
         background: '#f3f4f6',
-        padding: 4,
         borderRadius: 4,
-        userSelect: 'none',
       }}
     >
       {title}
     </h3>
-    <div style={{ flex: 1 }}>{children}</div>
+    <div className='flex'>{children}</div>
   </div>
 );
 
