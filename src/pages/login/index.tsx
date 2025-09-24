@@ -66,7 +66,7 @@ const LoginPage: React.FC = () => {
     <div className="relative w-screen h-screen flex items-center justify-center font-sans">
       {/* Background Image */}
       <img
-        src="/assets/marmore.png"
+        src="/assets/marmore3.png"
         alt="Marble background"
         className="absolute top-0 left-0 w-full h-full object-cover -z-10"
       />

@@ -1,0 +1,75 @@
+/* Widget Grid Layout Styles */
+.widget-grid-container {
+  height: 100%;
+  width: 100%;
+  /* Add top margin to account for header height */
+  margin-top: 0;
+  /* Ensure grid doesn't overlap with fixed header */
+  position: relative;
+  z-index: 1;
+}
+
+.react-grid-layout {
+  position: relative;
+  /* Ensure the grid layout has proper boundaries */
+  min-height: calc(100vh - 80px); /* Account for header height */
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNiIgaGVpZ2h0PSI2IiB2aWV3Qm94PSIwIDAgNiA2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnIGZpbGw9IiM0NDRCRCI+PHBhdGggZD0ibTYgNmgtMXYtNWgtNXYtMXoiLz48L2c+PC9zdmc+');
+  background-position: bottom right;
+  padding: 0 3px 3px 0;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  cursor: se-resize;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: #1890ff;
+  opacity: 0.2;
+  transition-duration: 100ms;
+  z-index: 2;
+  user-select: none;
+  border-radius: 4px;
+}
+
+.widget-item {
+  height: 100%;
+  width: 100%;
+}
+
+.widget-title {
+  cursor: grab !important;
+}
+
+.widget-title:active {
+  cursor: grabbing !important;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 768px) {
+  .react-grid-item {
+    margin-bottom: 16px;
+  }
+}
+
+/* Make sure widgets fit well in grid items */
+.react-grid-item .widget-container {
+  height: 100%;
+  width: 100%;
+}

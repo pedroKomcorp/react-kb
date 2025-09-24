@@ -18,6 +18,7 @@ const ProjetosWidget: React.FC = () => {
 		const [canScrollLeft, setCanScrollLeft] = useState(false);
 		const [canScrollRight, setCanScrollRight] = useState(false);
 		const [cardWidth, setCardWidth] = useState(180); // Estado para a largura dinâmica do card
+		const [cardsToShow, setCardsToShow] = useState<number>(4);
 		// Filtros
 		const [nome, setNome] = useState('');
 		const [status, setStatus] = useState('');
@@ -53,19 +54,33 @@ const ProjetosWidget: React.FC = () => {
 			fetchData();
 	}, []);
 
-		// Calcula o tamanho do card com base no tamanho do container
+		// Enhanced responsive card size calculation
 		useLayoutEffect(() => {
 			function updateCardSize() {
 				if (carouselRef.current) {
 					const containerWidth = carouselRef.current.offsetWidth;
-					// Tenta exibir aprox. 4.5 cards para indicar que há mais para rolar
-					const desiredVisibleCards = 4.5;
-					const newCardWidth = Math.max(160, containerWidth / desiredVisibleCards); // Define uma largura mínima
+					let desiredVisibleCards = 4; // Default visible cards
+					
+					// Adjust visible cards based on container width
+					if (containerWidth < 400) {
+						desiredVisibleCards = 1.2; // Mobile: show 1 card with hint of next
+					} else if (containerWidth < 600) {
+						desiredVisibleCards = 2.2; // Small tablet: show 2 cards with hint
+					} else if (containerWidth < 800) {
+						desiredVisibleCards = 3.2; // Tablet: show 3 cards with hint
+					} else if (containerWidth < 1200) {
+						desiredVisibleCards = 4.2; // Small desktop: show 4 cards with hint
+					}
+					
+					const newCardWidth = Math.max(120, Math.min(320, containerWidth / desiredVisibleCards));
 					setCardWidth(newCardWidth);
+					// Set an integer number of cards to show that fits the container
+					const approx = Math.floor(containerWidth / newCardWidth) || 1;
+					setCardsToShow(Math.max(1, Math.min(6, approx)));
 				}
 			}
 			window.addEventListener('resize', updateCardSize);
-			updateCardSize(); // Cálculo inicial
+			updateCardSize(); // Initial calculation
 			return () => window.removeEventListener('resize', updateCardSize);
 		}, [projetos]);
 
@@ -121,43 +136,43 @@ const ProjetosWidget: React.FC = () => {
 			}, [projetosFiltrados.length, cardWidth]);
 
 		return (
-			<div className="w-full h-full overflow-hidden p-2 flex flex-col">
-				<div className="flex flex-row gap-2 mb-2 items-center flex-shrink-0">
+			<div className="w-full h-full overflow-hidden flex flex-col" style={{ padding: 0 }}>
+				<div className="widget-filters responsive-gap-sm mb-2 items-center flex-shrink-0 responsive-padding-sm">
 					<Input
 						size="small"
-						placeholder="Nome do projeto"
+						placeholder="Nome"
 						value={nome}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value)}
-						className="w-[90px] md:w-[120px]"
+						className="widget-filter-item"
 					/>
 					<Select
 						size="small"
 						value={status}
 						onChange={setStatus}
 						options={statusOptions}
-						className="w-[90px] md:w-[120px]"
+						className="widget-filter-item"
 					/>
 					<Select
 						size="small"
 						value={categoria}
 						onChange={setCategoria}
 						options={categoriaOptions}
-						className="w-[90px] md:w-[120px]"
+						className="widget-filter-item"
 					/>
 					<Select
 						size="small"
 						value={prioridade}
 						onChange={setPrioridade}
 						options={prioridadeOptions}
-						className="w-[90px] md:w-[120px]"
+						className="widget-filter-item"
 					/>
 				</div>
 								{loading ? <Spin /> : (
 								<div className="relative w-full flex-1 flex items-center overflow-hidden min-h-0">
 										<button
 											type="button"
-											className="absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-blue-100 border border-gray-300 rounded-full p-1 shadow transition disabled:opacity-30"
-											style={{ display: projetosFiltrados.length > 0 ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center' }}
+											className="widget-scroll-button absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-blue-100 border border-gray-300 rounded-full p-1 shadow transition disabled:opacity-30 flex items-center justify-center"
+											style={{ display: projetosFiltrados.length > 0 ? 'flex' : 'none' }}
 											onClick={() => {
 												const el = carouselRef.current;
 												if (el) el.scrollBy({ left: -cardWidth, behavior: 'smooth' });
@@ -190,25 +205,30 @@ const ProjetosWidget: React.FC = () => {
 													<div
 														ref={carouselRef}
 														id="projetos-carousel"
-														className="flex items-center flex-row gap-4 overflow-x-auto scrollbar-hide w-full h-full px-8 box-border"
+														className="flex items-center flex-row responsive-gap overflow-x-auto custom-scrollbar w-full h-full responsive-padding-sm box-border"
 														style={{ scrollBehavior: 'smooth', minHeight: 0, minWidth: 0, maxWidth: '100%', maxHeight: '100%' }}
 													>
 														{projetosFiltrados.length === 0 ? <div className="w-full text-center">Nenhum projeto encontrado.</div> : (
-															projetosFiltrados.map(projeto => (
-																<div key={projeto.id} className="flex-shrink-0 h-full flex items-center" style={{ width: `${cardWidth}px`}}>
-																<ProjetoCarouselCard
-																		projeto={projeto}
-																		usuarios={usuarios}
-																		onClick={() => setSelectedProjeto(projeto)}
-																	/>
-																</div>
-															))
+																														projetosFiltrados.map(projeto => {
+																																																const flexBasis = cardsToShow > 0 ? `calc(100% / ${cardsToShow})` : `${cardWidth}px`;
+																																																return (
+																																																	<div key={projeto.id} className="h-full flex items-center" style={{ flex: `1 1 ${flexBasis}`, minWidth: `${cardWidth}px` }}>
+																																																		<div style={{ width: '100%' }}>
+																																																			<ProjetoCarouselCard
+																																																				projeto={projeto}
+																																																				usuarios={usuarios}
+																																																				onClick={() => setSelectedProjeto(projeto)}
+																																																			/>
+																																																		</div>
+																																																	</div>
+																																																);
+																														})
 														)}
 													</div>
 										<button
 											type="button"
-											className="absolute right-1 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-blue-100 border border-gray-300 rounded-full p-1 shadow transition disabled:opacity-30"
-											style={{ display: projetosFiltrados.length > 0 ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center' }}
+											className="widget-scroll-button absolute right-1 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-blue-100 border border-gray-300 rounded-full p-1 shadow transition disabled:opacity-30 flex items-center justify-center"
+											style={{ display: projetosFiltrados.length > 0 ? 'flex' : 'none' }}
 											onClick={() => {
 												const el = carouselRef.current;
 												if (el) el.scrollBy({ left: cardWidth, behavior: 'smooth' });

@@ -6,7 +6,7 @@ interface WidgetProps {
 }
 
 const Widget: React.FC<WidgetProps> = ({ title, children }) => (
-  <div style={{
+  <div className="widget-container" style={{
     background: '#fff',
     border: '1px solid #ddd',
     borderRadius: 8,
@@ -14,22 +14,33 @@ const Widget: React.FC<WidgetProps> = ({ title, children }) => (
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
+    minHeight: '100px', 
+    overflow: 'hidden', // Prevent content overflow
   }}>
     <h3
-      className="widget"
+      className="widget widget-title"
       style={{
         margin: 0,
         marginBottom: 8,
-        fontSize: 14,
         cursor: 'grab',
         fontWeight: 600,
         background: '#f3f4f6',
-        borderRadius: 4,
+        borderRadius: '4px 4px 0 0',
+        padding: 'clamp(6px, 1.5cqw, 12px)',
+        flexShrink: 0, // Prevent header from shrinking
+        borderBottom: '1px solid #e5e7eb',
       }}
     >
       {title}
     </h3>
-    <div className='flex'>{children}</div>
+    <div 
+      className='flex flex-1 overflow-hidden widget-content responsive-padding'
+      style={{
+        minHeight: 0, // Allow flex child to shrink
+      }}
+    >
+      {children}
+    </div>
   </div>
 );
 

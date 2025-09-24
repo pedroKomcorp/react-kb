@@ -1,0 +1,139 @@
+/* Enhanced responsive utilities for widgets */
+
+/* Widget container responsive styles */
+.widget-container {
+  container-type: inline-size;
+  container-name: widget;
+}
+
+/* Responsive typography for widgets */
+.widget-title {
+  font-size: clamp(12px, 2.5cqw, 16px);
+}
+
+.widget-content {
+  font-size: clamp(11px, 2cqw, 14px);
+}
+
+/* Responsive spacing utilities */
+.responsive-padding-sm {
+  padding: clamp(4px, 1cqw, 8px);
+}
+
+.responsive-padding {
+  padding: clamp(8px, 2cqw, 16px);
+}
+
+.responsive-padding-lg {
+  padding: clamp(12px, 3cqw, 24px);
+}
+
+.responsive-gap-sm {
+  gap: clamp(4px, 1cqw, 8px);
+}
+
+.responsive-gap {
+  gap: clamp(8px, 2cqw, 16px);
+}
+
+/* Container queries for widget responsiveness */
+@container widget (max-width: 300px) {
+  .widget-compact {
+    font-size: 12px;
+  }
+  
+  .widget-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .widget-filter-item {
+    width: 100% !important;
+  }
+  
+  .widget-scroll-button {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+}
+
+@container widget (min-width: 301px) and (max-width: 500px) {
+  .widget-filters {
+    flex-wrap: wrap;
+  }
+  
+  .widget-filter-item {
+    min-width: 80px;
+    flex: 1;
+  }
+}
+
+@container widget (min-width: 501px) {
+  .widget-filters {
+    flex-wrap: nowrap;
+  }
+  
+  .widget-filter-item {
+    min-width: 100px;
+  }
+}
+
+/* Responsive grid utilities */
+.responsive-grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: clamp(8px, 2cqw, 16px);
+}
+
+.responsive-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(6px, 1.5cqw, 12px);
+}
+
+/* Scrollbar styles for better mobile experience */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Mobile-first touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  .widget-scroll-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .widget-interactive {
+    min-height: 44px;
+    padding: 12px;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .widget-content {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

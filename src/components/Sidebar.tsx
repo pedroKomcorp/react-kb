@@ -84,88 +84,101 @@ const Sidebar: React.FC = () => {
   );
 
   return (
-    <nav className={`fixed left-0 h-[calc(100vh-2.5rem)] z-20 mt-5 bg-black overflow-hidden rounded-e-xl shadow-sm shadow-black transition-all duration-700 ease-in-out ${isExpanded ? 'w-48' : 'w-12'}`}
-      style={{ backgroundImage: "assets/marmore.png"}}
+    <div className="fixed left-0 z-20 mt-2">
+      {/* Logo section */}
+      <div className={`flex justify-end items-center ml-2 px-1 w-12 h-16`}>
+      <div className="w-10 h-10 flex items-center justify-center">
+        <img 
+        src="public/assets/k.png"
+        className="w-full h-full object-contain"
+        />
+      </div>
+      </div>
+      
+      {/* Navigation */}
+      <nav className={`h-[calc(95vh-4rem)] overflow-hidden rounded-e-xl shadow-sm shadow-black transition-all duration-700 ease-in-out ${isExpanded ? 'w-48' : 'w-16'}`}
+      style={{ background: "linear-gradient(360deg,rgba(119,83,67, 1) 0%, rgba(31, 30, 39, 1) 60%)" }}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
-    >
+      >
       <div className="flex flex-col h-full">
-        {/* Main navigation links */}
-        <ul className="flex-1">
-          <li>
-            <Link
-              to="/home"
-              className={`flex items-center p-3 gap-4 text-white font-semibold transition-colors duration-200 ${
-                location.pathname === '/home' ? 'bg-[#9B6A51]' : 'hover:bg-white/10 hover:rounded-lg'
+      {/* Main navigation links */}
+      <ul className="flex-1">
+        <li>
+        <Link
+          to="/home"
+          className={`flex items-center p-5 gap-4 text-white font-semibold transition-colors duration-200 ${
+          location.pathname === '/home' ? 'bg-[#775343]' : 'hover:bg-white/10 hover:rounded-lg'
+          }`}
+        >
+          <HomeIcon className="w-6 h-6 shrink-0" />
+          <SidebarItem>Home</SidebarItem>
+        </Link>
+        </li>
+
+        {/* Dynamic Sidebar Items */}
+        {sidebarItems.map((item) => {
+        const isSubmenuOpen = openSubmenus[item.name] || false;
+        const isActive = item.sub_options.some(sub => location.pathname.startsWith(sub.url));
+
+        return (
+          <li key={item.name}>
+          <button
+            onClick={() => handleMenuClick(item.name)}
+            className={`w-full flex items-center justify-between p-5 gap-4 text-white transition-colors duration-200 ${
+            isActive ? 'bg-[#775343]' : 'hover:bg-white/10'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+            <IconComponent name={item.icon_name} className="w-6 h-6 shrink-0" />
+            <SidebarItem>{item.name}</SidebarItem>
+            </div>
+            {isExpanded && (
+            <ChevronDownIcon
+              className={`w-5 h-5 shrink-0 transition-transform duration-300 ${
+              isSubmenuOpen ? 'rotate-180' : ''
               }`}
-            >
-              <HomeIcon className="w-6 h-6 shrink-0" />
-              <SidebarItem>Home</SidebarItem>
-            </Link>
-          </li>
+            />
+            )}
+          </button>
 
-          {/* Dynamic Sidebar Items */}
-          {sidebarItems.map((item) => {
-            const isSubmenuOpen = openSubmenus[item.name] || false;
-            const isActive = item.sub_options.some(sub => location.pathname.startsWith(sub.url));
-
-            return (
-              <li key={item.name}>
-                <button
-                  onClick={() => handleMenuClick(item.name)}
-                  className={`w-full flex items-center justify-between p-3 gap-4 text-white transition-colors duration-200 ${
-                    isActive ? 'bg-[#9B6A51]' : 'hover:bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <IconComponent name={item.icon_name} className="w-6 h-6 shrink-0" />
-                    <SidebarItem>{item.name}</SidebarItem>
-                  </div>
-                  {isExpanded && (
-                    <ChevronDownIcon
-                      className={`w-5 h-5 shrink-0 transition-transform duration-300 ${
-                        isSubmenuOpen ? 'rotate-180' : ''
-                      }`}
-                    />
-                  )}
-                </button>
-
-                {/* Submenu with smooth transition */}
-                <div
-                  className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
-                    isSubmenuOpen && isExpanded ? 'max-h-40' : 'max-h-0' // Control visibility and animate height
-                  }`}
-                >
-                  <ul className="flex align-end font-light flex-col w-full space-y-0.5">
-                    {item.sub_options.map((sub) => (
-                      <li key={sub.name}>
-                        <Link
-                          to={sub.url}
-                          className="w-full flex items-center justify-start pl-13 p-1 gap-1 text-white transition-colors duration-200 hover:bg-white/15"
-                        >
-                          {sub.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          {/* Submenu with smooth transition */}
+          <div
+            className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
+            isSubmenuOpen && isExpanded ? 'max-h-40' : 'max-h-0' // Control visibility and animate height
+            }`}
+          >
+            <ul className="flex align-end font-light flex-col w-full space-y-0.5">
+            {item.sub_options.map((sub) => (
+              <li key={sub.name}>
+              <Link
+                to={sub.url}
+                className="w-full flex items-center justify-start pl-13 p-1 gap-1 text-white transition-colors duration-200 hover:bg-white/15"
+              >
+                {sub.name}
+              </Link>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+            </ul>
+          </div>
+          </li>
+        );
+        })}
+      </ul>
 
-        {/* Logout Button */}
-        <div className="p-2 ">
-            <button
-              onClick={() => handleSair()}
-              className="w-full flex items-center gap-4 pr-3 pt-1 pb-2 text-white font-semibold"
-            >
-              <ArrowRightOnRectangleIcon className="w-6 h-6 shrink-0" />
-              <SidebarItem>Sair</SidebarItem>
-            </button>
-        </div>
+      {/* Logout Button */}
+      <div className="p-5">
+        <button
+          onClick={() => handleSair()}
+          className="w-full flex items-center gap-4 pr-3 pt-1 pb-2 text-white font-semibold"
+        >
+          <ArrowRightOnRectangleIcon className="w-6 h-6 shrink-0" />
+          <SidebarItem>Sair</SidebarItem>
+        </button>
+      </div>
       </div>
     </nav>
+    </div>
   );
 };
 
