@@ -62,9 +62,12 @@ const ProjetosList: React.FC<ProjetosListProps> = ({
   novoEtapaDataFim,
   setNovoEtapaDataFim
 }) => (
-  <List
-    grid={{ gutter: 16, column: 1 }}
-    dataSource={projetos}
+  <div className="w-full bg-white rounded-lg shadow-sm p-6">
+    <List
+      className="w-full"
+      style={{ width: '100%' }}
+      grid={{ gutter: [16, 20], column: 1 }}
+      dataSource={projetos}
     loading={loading}
     locale={{ emptyText: 'Nenhum projeto cadastrado.' }}
     pagination={{
@@ -106,6 +109,7 @@ const ProjetosList: React.FC<ProjetosListProps> = ({
       </React.Fragment>
     )}
   />
+  </div>
 );
 
 export default ProjetosList;

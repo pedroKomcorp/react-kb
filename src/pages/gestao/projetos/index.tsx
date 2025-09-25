@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../../services/api';
 import { createProjeto } from '../../../services/projetos';
 import { getUsuarios } from '../../../services/usuarios';
-import { Button, Modal, Input, Typography, Space, message, Select } from 'antd';
-import { PlusOutlined, FolderOpenOutlined, FilterOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import { Modal, Input, Space, message, Select } from 'antd';
+import { PlusOutlined, FolderOpenOutlined, UnorderedListOutlined } from '@ant-design/icons';
 
 import type { Usuario } from '../../../types/usuario'
 import type { Projeto } from '../../../types/projeto'
@@ -15,8 +15,6 @@ import { StatusEtapaEnum } from '../../../types/etapa';
 import EtapasList from '../../../components/etapas/EtapasList';
 import ProjetoDetailModal from '../../../components/projetos/ProjetoDetailModal';
 import ProjetosList from '../../../components/projetos/ProjetosList';
-
-const { Title } = Typography;
 
 
 const ProjetosPage: React.FC = () => {
@@ -185,9 +183,6 @@ const ProjetosPage: React.FC = () => {
   };
 
   // Filtered data
-  // Get unique responsáveis for filter dropdown
-  const responsaveisOptions = usuarios.map(u => ({ value: u.id, label: `${u.nome} (${u.email})` }));
-
   const filteredProjetos = projetos.filter(p =>
     (!filterStatus || p.status === filterStatus) &&
     (!filterCategoria || p.categoria === filterCategoria) &&
@@ -210,41 +205,44 @@ const ProjetosPage: React.FC = () => {
   );
 
   return (
-    <div className="h-screen w-screen pl-6 flex flex-col">
-      {/* Fixed Header */}
-      <div className="sticky top-0 z-10 bg-gray-100 pl-20 p-6 flex flex-col md:flex-row md:items-center md:justify-between shadow-sm">
-        <Title level={2} className="mb-2 md:mb-0">Projetos</Title>
-        <Space wrap>
-          <Button
-            type="primary"
-            shape="round"
-            icon={<PlusOutlined />}
-            onClick={() => setShowProjetoModal(true)}
-          >
-            Novo Projeto
-          </Button>
-          <Button
-            type="default"
-            shape="round"
-            icon={<FolderOpenOutlined/>}
-            onClick={() => setViewMode('projetos')}
-            className={viewMode === 'projetos' ? 'border-blue-500 text-blue-600 font-bold shadow' : 'border-gray-300 text-gray-700'}
-            style={viewMode === 'projetos' ? { background: '#e6f0ff', borderColor: '#1677ff' } : {}}
-          >
-            Projetos
-          </Button>
-          <Button
-            type="default"
-            shape="round"
-            icon={<UnorderedListOutlined />}
-            onClick={() => setViewMode('etapas')}
-            className={viewMode === 'etapas' ? 'border-blue-500 text-blue-600 font-bold shadow' : 'border-gray-300 text-gray-700'}
-            style={viewMode === 'etapas' ? { background: '#e6f0ff', borderColor: '#1677ff' } : {}}
-          >
-            Etapas
-          </Button>
-        </Space>
-      </div>
+    <div className="w-full h-full flex flex-col">
+      {/* Page Content */}
+      <div className="flex-1 flex flex-col pl-20 p-4 space-y-4">
+        {/* Page Title and Controls */}
+        <div className="bg-transparent rounded-lg flex items-center justify-between flex-shrink-0">
+          <h1 className="text-2xl font-bold text-white">PROJETOS</h1>
+          <div className="flex items-center space-x-6">
+            <button
+              className="px-4 py-3 bg-white/20 hover:bg-white/30 text-white rounded-md transition-colors duration-200 font-semibold flex items-center space-x-2"
+              onClick={() => setShowProjetoModal(true)}
+            >
+              <PlusOutlined />
+              <span>Novo Projeto</span>
+            </button>
+            <button
+              onClick={() => setViewMode('projetos')}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'projetos' 
+                  ? 'bg-[#775343] text-white' 
+                  : 'bg-white/20 hover:bg-white/30 text-white'
+              }`}
+            >
+              <FolderOpenOutlined className="mr-2" />
+              Projetos
+            </button>
+            <button
+              onClick={() => setViewMode('etapas')}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'etapas' 
+                  ? 'bg-[#775343] text-white' 
+                  : 'bg-white/20 hover:bg-white/30 text-white'
+              }`}
+            >
+              <UnorderedListOutlined className="mr-2" />
+              Etapas
+            </button>
+            </div>
+        </div>
 
       {/* Modal for creating Projeto */}
       <Modal
@@ -346,87 +344,84 @@ const ProjetosPage: React.FC = () => {
         </Space>
       </Modal>
 
-      {/* Filters */}
-      {viewMode === 'projetos' ? (
-        <div className="flex flex-wrap gap-4 px-6 pt-4 pb-2 bg-gray-50 border-b border-gray-200 items-center">
-          <Input
-            prefix={<FilterOutlined />}
-            placeholder="Filtrar por nome"
-            value={filterNome}
-            onChange={e => setFilterNome(e.target.value)}
-            className="w-48"
-          />
-          <Select
-            allowClear
-            placeholder="Status"
-            value={filterStatus}
-            onChange={setFilterStatus}
-            className="w-32"
-            options={[
-              { value: 'NI', label: 'Não Iniciado' },
-              { value: 'EA', label: 'Em Andamento' },
-              { value: 'C', label: 'Concluído' },
-              { value: 'P', label: 'Pausado' },
-            ]}
-          />
-          <Select
-            allowClear
-            placeholder="Categoria"
-            value={filterCategoria}
-            onChange={setFilterCategoria}
-            className="w-32"
-            options={[
-              { value: 'DV', label: 'Desenvolvimento' },
-              { value: 'MK', label: 'Marketing' },
-              { value: 'OT', label: 'Outros' },
-            ]}
-          />
-          <Select
-            allowClear
-            placeholder="Responsável"
-            value={filterResponsavel}
-            onChange={setFilterResponsavel}
-            className="w-40"
-            options={responsaveisOptions}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-wrap gap-4 px-6 pt-4 pb-2 bg-gray-50 border-b border-gray-200 items-center">
-          <Input
-            prefix={<FilterOutlined />}
-            placeholder="Filtrar por nome da etapa"
-            value={filterEtapaNome}
-            onChange={e => setFilterEtapaNome(e.target.value)}
-            className="w-48"
-          />
-          <Select
-            allowClear
-            placeholder="Status da Etapa"
-            value={filterEtapaStatus}
-            onChange={setFilterEtapaStatus}
-            className="w-32"
-            options={[
-              { value: 'NI', label: 'Não Iniciada' },
-              { value: 'EA', label: 'Em Andamento' },
-              { value: 'C', label: 'Concluída' },
-              { value: 'P', label: 'Pausada' },
-            ]}
-          />
-          <Select
-            allowClear
-            placeholder="Projeto relacionado"
-            value={filterEtapaProjetoId}
-            onChange={setFilterEtapaProjetoId}
-            className="w-40"
-            options={projetos.map(p => ({ value: p.id, label: p.nome }))}
-          />
-        </div>
-      )}
-
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
+        {/* Filters */}
         {viewMode === 'projetos' ? (
-          <ProjetosList
+          <div className="bg-transparent rounded-lg flex flex-wrap items-center space-x-4">
+            <input
+              type="text"
+              placeholder="Filtrar por nome"
+              value={filterNome}
+              onChange={e => setFilterNome(e.target.value)}
+              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <select
+              value={filterStatus || ''}
+              onChange={e => setFilterStatus(e.target.value || undefined)}
+              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Status</option>
+              <option value="NI">Não Iniciado</option>
+              <option value="EA">Em Andamento</option>
+              <option value="C">Concluído</option>
+              <option value="P">Pausado</option>
+            </select>
+            <select
+              value={filterCategoria || ''}
+              onChange={e => setFilterCategoria(e.target.value || undefined)}
+              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Categoria</option>
+              <option value="DV">Desenvolvimento</option>
+              <option value="MK">Marketing</option>
+              <option value="OT">Outros</option>
+            </select>
+            <select
+              value={filterResponsavel || ''}
+              onChange={e => setFilterResponsavel(e.target.value ? Number(e.target.value) : undefined)}
+              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Responsável</option>
+              {usuarios.map(u => (
+                <option key={u.id} value={u.id}>{u.nome}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="bg-transparent rounded-lg flex flex-wrap items-center space-x-4">
+            <input
+              type="text"
+              placeholder="Filtrar por nome da etapa"
+              value={filterEtapaNome}
+              onChange={e => setFilterEtapaNome(e.target.value)}
+              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <select
+              value={filterEtapaStatus || ''}
+              onChange={e => setFilterEtapaStatus(e.target.value || undefined)}
+              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Status da Etapa</option>
+              <option value="NI">Não Iniciada</option>
+              <option value="EA">Em Andamento</option>
+              <option value="C">Concluída</option>
+              <option value="P">Pausada</option>
+            </select>
+            <select
+              value={filterEtapaProjetoId || ''}
+              onChange={e => setFilterEtapaProjetoId(e.target.value ? Number(e.target.value) : undefined)}
+              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Projeto relacionado</option>
+              {projetos.map(p => (
+                <option key={p.id} value={p.id}>{p.nome}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <main className="flex-grow flex overflow-hidden w-full">{viewMode === 'projetos' ? (
+          <div className="w-full">
+            <ProjetosList
             projetos={filteredProjetos.map(p => ({
               ...p,
               etapas: etapas.filter(e => e.projeto_id === p.id)
@@ -460,15 +455,18 @@ const ProjetosPage: React.FC = () => {
             setDetailModalProjeto={setDetailModalProjeto}
             onDeleteProjeto={handleDeleteProjeto}
           />
+          </div>
         ) : (
-          <EtapasList
-            etapas={filteredEtapas}
-            loading={loading}
-            onSelectEtapa={setDetailModalEtapa}
-            onDeleteEtapa={handleDeleteEtapa}
-          />
+          <div className="w-full">
+            <EtapasList
+              etapas={filteredEtapas}
+              loading={loading}
+              onSelectEtapa={setDetailModalEtapa}
+              onDeleteEtapa={handleDeleteEtapa}
+            />
+          </div>
         )}
-      </div>
+        </main>
 
       <ProjetoDetailModal
         onDeleteEtapa={handleDeleteEtapa}
@@ -537,6 +535,7 @@ const ProjetosPage: React.FC = () => {
         onClose={() => setDetailModalEtapa(null)}
         width={600}
       />
+      </div>
     </div>
   );
 };

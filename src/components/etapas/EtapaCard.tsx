@@ -22,7 +22,7 @@ const statusMap: Record<string, { color: string; label: string }> = {
 
 const EtapaCard: React.FC<EtapaCardProps> = ({ etapa, onClick, onDeleteEtapa }) => (
   <Card
-    className="rounded-lg shadow bg-white w-full transition-all duration-200 cursor-pointer hover:border-blue-400 border border-gray-200 mb-2"
+    className="rounded-lg shadow bg-white w-full transition-all duration-200 cursor-pointer hover:border-blue-400 border border-gray-200"
     onClick={onClick}
     title={
       <div className="flex items-center justify-between">

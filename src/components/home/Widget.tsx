@@ -6,8 +6,8 @@ interface WidgetProps {
 }
 
 const Widget: React.FC<WidgetProps> = ({ title, children }) => (
-  <div className="widget-container" style={{
-    background: '#7A625D',
+  <div className="widget-container backdrop-blur-sm" style={{
+    background: 'rgba(224,163,123, 0.3)',
     border: '1px solid #ddd',
     borderRadius: 8,
     boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
