@@ -16,7 +16,7 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   const [showConfig, setShowConfig] = useState(false);
 
   return (
-    <header className="w-full z-10 flex items-center justify-between min-h-[60px] px-6 py-3 bg-gray-800/20">
+    <header className="w-full z-10 flex items-center justify-between min-h-[60px] px-6 py-3">
       {/* Left side - Title or empty space */}
       <div className="flex items-center gap-4">
         {showTitle && title && (

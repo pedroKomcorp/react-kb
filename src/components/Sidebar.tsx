@@ -89,14 +89,15 @@ const Sidebar: React.FC = () => {
       <div className={`flex justify-end items-center ml-2 px-1 w-12 h-16`}>
       <div className="w-10 h-10 flex items-center justify-center">
         <img 
-        src="public/assets/k.png"
+        src="/assets/K.png"
+        alt="K logo"
         className="w-full h-full object-contain"
         />
       </div>
       </div>
       
       {/* Navigation */}
-      <nav className={`h-[calc(95vh-4rem)] overflow-hidden rounded-e-xl shadow-sm shadow-black transition-all duration-700 ease-in-out ${isExpanded ? 'w-48' : 'w-16'}`}
+      <nav className={`h-[calc(95vh-4rem)] overflow-hidden rounded-e-xl transition-all duration-700 ease-in-out ${isExpanded ? 'w-48' : 'w-16'}`}
       style={{ background: "linear-gradient(360deg,rgba(119,83,67, 1) 0%, rgba(31, 30, 39, 1) 60%)" }}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
@@ -108,10 +109,10 @@ const Sidebar: React.FC = () => {
         <Link
           to="/home"
           className={`flex items-center p-5 gap-4 text-white font-semibold transition-colors duration-200 ${
-          location.pathname === '/home' ? 'bg-[#775343]' : 'hover:bg-white/10 hover:rounded-lg'
+          location.pathname === '/home' ? 'bg-black/80 inset-shadow-[0px_0px_10px_0px_#452D2C] ' : 'hover:bg-black/40 hover:rounded-lg'
           }`}
         >
-          <HomeIcon className="w-6 h-6 shrink-0" />
+          <HomeIcon className={`w-6 h-6 shrink-0 ${location.pathname === '/home' ? 'text-[#775343]' : 'text-white'}`}/>
           <SidebarItem>Home</SidebarItem>
         </Link>
         </li>
@@ -126,12 +127,15 @@ const Sidebar: React.FC = () => {
           <button
             onClick={() => handleMenuClick(item.name)}
             className={`w-full flex items-center justify-between p-5 gap-4 text-white transition-colors duration-200 ${
-            isActive ? 'bg-[#775343]' : 'hover:bg-white/10'
+            isActive ? 'bg-black/80 inset-shadow-[0px_0px_10px_0px_#452D2C]' : 'hover:bg-black/40'
             }`}
           >
             <div className="flex items-center gap-4">
-            <IconComponent name={item.icon_name} className="w-6 h-6 shrink-0" />
-            <SidebarItem>{item.name}</SidebarItem>
+              <IconComponent
+              name={item.icon_name}
+              className={`w-6 h-6 shrink-0 ${isActive ? 'text-[#775343]' : 'text-white'}`}
+              />
+              <SidebarItem>{item.name}</SidebarItem>
             </div>
             {isExpanded && (
             <ChevronDownIcon
@@ -145,7 +149,7 @@ const Sidebar: React.FC = () => {
           {/* Submenu with smooth transition */}
           <div
             className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
-            isSubmenuOpen && isExpanded ? 'max-h-40' : 'max-h-0' // Control visibility and animate height
+            isSubmenuOpen && isExpanded ? 'max-h-40' : 'max-h-0'
             }`}
           >
             <ul className="flex align-end font-light flex-col w-full space-y-0.5">
@@ -153,7 +157,7 @@ const Sidebar: React.FC = () => {
               <li key={sub.name}>
               <Link
                 to={sub.url}
-                className="w-full flex items-center justify-start pl-13 p-1 gap-1 text-white transition-colors duration-200 hover:bg-white/15"
+                className="w-full flex items-center justify-start pl-13 p-1 gap-1 text-white transition-colors duration-200 hover:bg-black/40"
               >
                 {sub.name}
               </Link>
@@ -167,10 +171,10 @@ const Sidebar: React.FC = () => {
       </ul>
 
       {/* Logout Button */}
-      <div className="p-5">
+      <div className="p-5 hover:bg-black/40">
         <button
           onClick={() => handleSair()}
-          className="w-full flex items-center gap-4 pr-3 pt-1 pb-2 text-white font-semibold"
+          className="w-full flex items-center gap-4 pr-3 pt-1 pb-2 text-white font-semibold transition-colors duration-200  rounded-lg"
         >
           <ArrowRightOnRectangleIcon className="w-6 h-6 shrink-0" />
           <SidebarItem>Sair</SidebarItem>

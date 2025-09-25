@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Etapa } from '../../../types/etapa';
+import type { Etapa, StatusEtapaEnum } from '../../../types/etapa';
 import type { Usuario } from '../../../types/usuario';
 import { Tag } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
@@ -15,16 +15,16 @@ type EtapaWithDetails = Etapa & {
 interface KanbanViewProps {
   etapas: EtapaWithDetails[];
   onEtapaClick: (etapa: Etapa) => void;
-  onUpdateEtapaStatus: (etapaId: number, newStatus: string) => void;
+  onUpdateEtapaStatus: (etapaId: number, newStatus: StatusEtapaEnum) => void;
 }
 
 const KanbanView: React.FC<KanbanViewProps> = ({ etapas, onEtapaClick, onUpdateEtapaStatus }) => {
   // Column definitions for the Kanban board
   const kanbanColumns = [
     { id: 'NI', title: 'A fazer', color: 'bg-gray-400' },
-    { id: 'EA', title: 'Em andamento', color: 'bg-blue-500' },
-    { id: 'P', title: 'Pausado', color: 'bg-yellow-500' },
-    { id: 'C', title: 'Concluído', color: 'bg-green-500' },
+    { id: 'EA', title: 'Em andamento', color: 'bg-[#bde5f4]' },
+    { id: 'P', title: 'Pausado', color: 'bg-[#f7debc]' },
+    { id: 'C', title: 'Concluído', color: 'bg-[#d3f4d4]' },
   ];
 
   // Mapping for priority display
@@ -45,7 +45,7 @@ const KanbanView: React.FC<KanbanViewProps> = ({ etapas, onEtapaClick, onUpdateE
     e.dataTransfer.setData('etapaId', etapaId.toString());
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, newStatus: string) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, newStatus: StatusEtapaEnum) => {
     e.preventDefault();
     const etapaId = parseInt(e.dataTransfer.getData('etapaId'), 10);
     const etapa = etapas.find(e => e.id === etapaId);
@@ -65,15 +65,14 @@ const KanbanView: React.FC<KanbanViewProps> = ({ etapas, onEtapaClick, onUpdateE
         {kanbanColumns.map(status => (
           <div
             key={status.id}
-            className="bg-gray-100 rounded-lg p-3 flex flex-col h-full"
-            onDrop={(e) => handleDrop(e, status.id)}
+            className={`${status.color} rounded-lg p-3 flex flex-col h-full`}
+            onDrop={(e) => handleDrop(e, status.id as StatusEtapaEnum)}
             onDragOver={handleDragOver}
           >
             {/* Column Header */}
-            <h3 className="font-bold text-gray-700 mb-3 flex items-center sticky top-0 bg-gray-100 py-1 z-10">
-              <span className={`w-3 h-3 rounded-full mr-2 ${status.color}`}></span>
+            <h3 className="font-bold text-white mb-3 flex items-center sticky top-0 bg-black/20 py-2 px-1 rounded z-10">
               <span>{status.title}</span>
-              <span className="ml-2 text-sm text-gray-500 bg-gray-200 rounded-full px-2">{getEtapasByStatus(status.id).length}</span>
+              <span className="ml-auto text-sm bg-white/20 rounded-full px-2 py-0.5">{getEtapasByStatus(status.id).length}</span>
             </h3>
             {/* Column Content */}
             <div className="flex-grow space-y-3 overflow-y-auto pr-1">

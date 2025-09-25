@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useImperativeHandle, forwardRef } from 'react';
 import type { Etapa } from '../../../types/etapa';
 
 // Constants for month names and days of the week
@@ -11,7 +11,12 @@ interface CalendarViewProps {
   onEtapaClick: (etapa: Etapa) => void;
 }
 
-const CalendarView: React.FC<CalendarViewProps> = ({ etapas, onEtapaClick }) => {
+export interface CalendarViewRef {
+  changeMonth: (direction: number) => void;
+  goToCurrentMonth: () => void;
+}
+
+const CalendarView = forwardRef<CalendarViewRef, CalendarViewProps>(({ etapas, onEtapaClick }, ref) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // --- DATE CALCULATIONS ---
@@ -37,6 +42,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({ etapas, onEtapaClick }) => 
       return newDate;
     });
   };
+
+  const goToCurrentMonth = () => {
+    setCurrentDate(new Date());
+  };
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    changeMonth,
+    goToCurrentMonth
+  }));
 
   /**
    * Filters and returns the etapas that fall on a specific calendar date.
@@ -138,6 +153,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ etapas, onEtapaClick }) => 
       </div>
     </div>
   );
-};
+});
+
+CalendarView.displayName = 'CalendarView';
 
 export default CalendarView;
