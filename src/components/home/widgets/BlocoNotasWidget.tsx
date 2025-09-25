@@ -4,12 +4,11 @@ const BlocoNotasWidget: React.FC = () => (
   <div className="w-full h-full flex flex-col responsive-padding">
     <div className="flex items-center gap-2 mb-3">
       <span className="text-lg">📝</span>
-      <span className="widget-content font-medium">Notas Rápidas</span>
+      <span className="widget-content text-white font-medium">Notas Rápidas</span>
     </div>
     <div className="flex-1 min-h-0">
       <textarea 
         className="w-full h-full p-2 border border-gray-200 rounded resize-none text-sm"
-        placeholder="Digite suas notas aqui..."
         style={{ fontSize: 'clamp(11px, 2cqw, 14px)' }}
       />
     </div>

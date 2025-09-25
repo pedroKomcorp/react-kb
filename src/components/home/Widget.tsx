@@ -7,7 +7,7 @@ interface WidgetProps {
 
 const Widget: React.FC<WidgetProps> = ({ title, children }) => (
   <div className="widget-container" style={{
-    background: '#fff',
+    background: '#7A625D',
     border: '1px solid #ddd',
     borderRadius: 8,
     boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
@@ -24,10 +24,10 @@ const Widget: React.FC<WidgetProps> = ({ title, children }) => (
         marginBottom: 8,
         cursor: 'grab',
         fontWeight: 600,
-        background: '#f3f4f6',
+        background: '#1F1E27',
         borderRadius: '4px 4px 0 0',
         padding: 'clamp(6px, 1.5cqw, 12px)',
-        flexShrink: 0, // Prevent header from shrinking
+        flexShrink: 0, 
         borderBottom: '1px solid #e5e7eb',
       }}
     >
@@ -36,7 +36,7 @@ const Widget: React.FC<WidgetProps> = ({ title, children }) => (
     <div 
       className='flex flex-1 overflow-hidden widget-content responsive-padding'
       style={{
-        minHeight: 0, // Allow flex child to shrink
+        minHeight: 0,
       }}
     >
       {children}

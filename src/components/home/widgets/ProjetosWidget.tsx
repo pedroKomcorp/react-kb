@@ -60,23 +60,41 @@ const ProjetosWidget: React.FC = () => {
 				if (carouselRef.current) {
 					const containerWidth = carouselRef.current.offsetWidth;
 					let desiredVisibleCards = 4; // Default visible cards
+					let cardMinWidth = 160; // Minimum card width
 					
-					// Adjust visible cards based on container width
+					// Adjust visible cards and minimum width based on container width
 					if (containerWidth < 400) {
-						desiredVisibleCards = 1.2; // Mobile: show 1 card with hint of next
+						desiredVisibleCards = 1.5; // Mobile: show 1 card with hint of next
+						cardMinWidth = 140;
 					} else if (containerWidth < 600) {
-						desiredVisibleCards = 2.2; // Small tablet: show 2 cards with hint
+						desiredVisibleCards = 2.3; // Small tablet: show 2 cards with hint
+						cardMinWidth = 150;
 					} else if (containerWidth < 800) {
 						desiredVisibleCards = 3.2; // Tablet: show 3 cards with hint
+						cardMinWidth = 160;
+					} else if (containerWidth < 1000) {
+						desiredVisibleCards = 3.5; // Small desktop: show 3+ cards
+						cardMinWidth = 180;
 					} else if (containerWidth < 1200) {
-						desiredVisibleCards = 4.2; // Small desktop: show 4 cards with hint
+						desiredVisibleCards = 4.2; // Medium desktop: show 4+ cards
+						cardMinWidth = 200;
+					} else {
+						desiredVisibleCards = 4.5; // Large desktop: show 4+ cards
+						cardMinWidth = 220;
 					}
 					
-					const newCardWidth = Math.max(120, Math.min(320, containerWidth / desiredVisibleCards));
+					// Calculate optimal card width considering gaps
+					const gapSize = 12; // Space between cards
+					const totalGapSpace = gapSize * (desiredVisibleCards - 1);
+					const availableCardSpace = containerWidth - totalGapSpace;
+					const calculatedWidth = availableCardSpace / desiredVisibleCards;
+					
+					const newCardWidth = Math.max(cardMinWidth, Math.min(280, calculatedWidth));
 					setCardWidth(newCardWidth);
+					
 					// Set an integer number of cards to show that fits the container
-					const approx = Math.floor(containerWidth / newCardWidth) || 1;
-					setCardsToShow(Math.max(1, Math.min(6, approx)));
+					const actualCardsVisible = Math.floor((containerWidth + gapSize) / (newCardWidth + gapSize));
+					setCardsToShow(Math.max(1, Math.min(6, actualCardsVisible)));
 				}
 			}
 			window.addEventListener('resize', updateCardSize);
@@ -137,34 +155,34 @@ const ProjetosWidget: React.FC = () => {
 
 		return (
 			<div className="w-full h-full overflow-hidden flex flex-col" style={{ padding: 0 }}>
-				<div className="widget-filters responsive-gap-sm mb-2 items-center flex-shrink-0 responsive-padding-sm">
+				<div className="flex flex-wrap gap-2 mb-3 items-center flex-shrink-0 px-2">
 					<Input
 						size="small"
 						placeholder="Nome"
 						value={nome}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value)}
-						className="widget-filter-item"
+						className="min-w-[120px] flex-1"
 					/>
 					<Select
 						size="small"
 						value={status}
 						onChange={setStatus}
 						options={statusOptions}
-						className="widget-filter-item"
+						className="min-w-[100px]"
 					/>
 					<Select
 						size="small"
 						value={categoria}
 						onChange={setCategoria}
 						options={categoriaOptions}
-						className="widget-filter-item"
+						className="min-w-[100px]"
 					/>
 					<Select
 						size="small"
 						value={prioridade}
 						onChange={setPrioridade}
 						options={prioridadeOptions}
-						className="widget-filter-item"
+						className="min-w-[100px]"
 					/>
 				</div>
 								{loading ? <Spin /> : (
@@ -205,24 +223,39 @@ const ProjetosWidget: React.FC = () => {
 													<div
 														ref={carouselRef}
 														id="projetos-carousel"
-														className="flex items-center flex-row responsive-gap overflow-x-auto custom-scrollbar w-full h-full responsive-padding-sm box-border"
-														style={{ scrollBehavior: 'smooth', minHeight: 0, minWidth: 0, maxWidth: '100%', maxHeight: '100%' }}
+														className="flex items-stretch flex-row gap-3 overflow-x-auto custom-scrollbar w-full h-full px-2 py-1"
+														style={{ 
+															scrollBehavior: 'smooth', 
+															minHeight: 0, 
+															minWidth: 0, 
+															maxWidth: '100%', 
+															maxHeight: '100%',
+															scrollSnapType: 'x mandatory'
+														}}
 													>
-														{projetosFiltrados.length === 0 ? <div className="w-full text-center">Nenhum projeto encontrado.</div> : (
-																														projetosFiltrados.map(projeto => {
-																																																const flexBasis = cardsToShow > 0 ? `calc(100% / ${cardsToShow})` : `${cardWidth}px`;
-																																																return (
-																																																	<div key={projeto.id} className="h-full flex items-center" style={{ flex: `1 1 ${flexBasis}`, minWidth: `${cardWidth}px` }}>
-																																																		<div style={{ width: '100%' }}>
-																																																			<ProjetoCarouselCard
-																																																				projeto={projeto}
-																																																				usuarios={usuarios}
-																																																				onClick={() => setSelectedProjeto(projeto)}
-																																																			/>
-																																																		</div>
-																																																	</div>
-																																																);
-																														})
+														{projetosFiltrados.length === 0 ? (
+															<div className="w-full flex items-center justify-center text-gray-500 text-sm">
+																Nenhum projeto encontrado.
+															</div>
+														) : (
+															projetosFiltrados.map(projeto => (
+																<div 
+																	key={projeto.id} 
+																	className="flex-shrink-0" 
+																	style={{ 
+																		width: `${cardWidth}px`,
+																		minWidth: `${cardWidth}px`,
+																		maxWidth: `${cardWidth}px`,
+																		scrollSnapAlign: 'start'
+																	}}
+																>
+																	<ProjetoCarouselCard
+																		projeto={projeto}
+																		usuarios={usuarios}
+																		onClick={() => setSelectedProjeto(projeto)}
+																	/>
+																</div>
+															))
 														)}
 													</div>
 										<button

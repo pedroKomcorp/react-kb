@@ -127,7 +127,7 @@ const Sidebar: React.FC = () => {
           <button
             onClick={() => handleMenuClick(item.name)}
             className={`w-full flex items-center justify-between p-5 gap-4 text-white transition-colors duration-200 ${
-            isActive ? 'bg-black/80 inset-shadow-[0px_0px_10px_0px_#452D2C]' : 'hover:bg-black/40'
+            isActive ? 'bg-black/80 inset-shadow-[0px_0px_10px_0px_#452D2C] ' : 'hover:bg-black/40'
             }`}
           >
             <div className="flex items-center gap-4">
