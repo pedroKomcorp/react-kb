@@ -5,7 +5,7 @@ import type { Usuario } from '../../../types/usuario';
 interface ProjetoCarouselCardProps {
   projeto: Projeto;
   usuarios: Usuario[];
-  onClick: () => void;
+  onClick: (e?: React.MouseEvent) => void;
 }
 
 const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usuarios, onClick }) => {
@@ -57,7 +57,11 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
   return (
     <div
       ref={ref}
-      onClick={onClick}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick(e);
+      }}
       className="bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-400 transition-all duration-200 p-3 h-full"
       style={{
         boxSizing: 'border-box',

@@ -36,7 +36,7 @@ const categoriaMap: Record<string, { color: string; label: string }> = {
 
 const ProjetoCard: React.FC<ProjetoCardProps> = ({ projeto, usuarios, onClick, onDeleteProjeto, showDeleteButton = true, showStatus = true }) => (
   <Card
-    className="rounded-lg shadow bg-white w-full transition-all duration-200 cursor-pointer hover:border-blue-400 border border-gray-200 p-2"
+    className="rounded-lg shadow  bg-white w-full transition-all duration-200 cursor-pointer hover:border-blue-400 border border-gray-200 p-2"
     onClick={onClick}
     title={
       <div className="flex flex-col gap-0.5 md:flex-row md:items-center md:justify-between min-h-0">

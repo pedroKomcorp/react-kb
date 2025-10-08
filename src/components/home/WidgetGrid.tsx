@@ -25,9 +25,7 @@ const LAYOUT_STORAGE_KEY = 'widgetGrid_layouts';
 // Helper functions for localStorage
 const saveLayoutToStorage = (layouts: { [key: string]: Layout[] }) => {
   try {
-    console.log('Saving layouts to localStorage:', layouts);
     localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layouts));
-    console.log('Layouts saved successfully');
   } catch (error) {
     console.warn('Failed to save layout to localStorage:', error);
   }
@@ -38,7 +36,6 @@ const loadLayoutFromStorage = (): { [key: string]: Layout[] } | null => {
     const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
     if (stored) {
       const layouts = JSON.parse(stored);
-      console.log('Loaded layouts from localStorage:', layouts);
       return layouts;
     }
     return null;
@@ -51,18 +48,8 @@ const loadLayoutFromStorage = (): { [key: string]: Layout[] } | null => {
 const clearLayoutFromStorage = () => {
   try {
     localStorage.removeItem(LAYOUT_STORAGE_KEY);
-    console.log('Widget layout cache cleared');
   } catch (error) {
     console.warn('Failed to clear layout from localStorage:', error);
-  }
-};
-
-const debugLayoutStorage = () => {
-  try {
-    const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    console.log('Current stored layout:', stored ? JSON.parse(stored) : 'No layout stored');
-  } catch (error) {
-    console.warn('Failed to read layout from localStorage:', error);
   }
 };
 
@@ -72,12 +59,6 @@ const debugLayoutStorage = () => {
   debugWidgetLayout: () => void;
 }).clearWidgetLayout = clearLayoutFromStorage;
 
-(globalThis as typeof globalThis & { 
-  clearWidgetLayout: () => void;
-  debugWidgetLayout: () => void;
-}).debugWidgetLayout = debugLayoutStorage;
-
-// Types and interfaces
 interface WidgetConfig {
   key: string;
   title: string;
@@ -140,10 +121,8 @@ const WidgetGrid: React.FC<WidgetGridProps> = ({ selectedKeys, allWidgets, defau
   useEffect(() => {
     const savedLayouts = loadLayoutFromStorage();
     if (savedLayouts && Object.keys(savedLayouts).length > 0) {
-      console.log('Loading saved layouts:', savedLayouts);
       setLayouts(savedLayouts);
     } else {
-      console.log('No saved layouts found, using default layout');
       // Use provided defaultLayout or generate from basic grid
       const initialLayouts = providedDefaultLayout || {
         lg: generateDefaultLayoutForKeys(selectedKeys),
@@ -166,10 +145,8 @@ const WidgetGrid: React.FC<WidgetGridProps> = ({ selectedKeys, allWidgets, defau
     return layouts[breakpoint] || fallbackLayout;
   };
   
-  const onLayoutChange = useCallback((currentLayout: Layout[], allLayouts: { [key: string]: Layout[] }) => {
-    console.log('Layout changed:', { currentLayout, allLayouts });
+  const onLayoutChange = useCallback((_currentLayout: Layout[], allLayouts: { [key: string]: Layout[] }) => {
     setLayouts(allLayouts);
-    // Save to localStorage whenever layout changes
     saveLayoutToStorage(allLayouts);
   }, []);
 
@@ -203,22 +180,16 @@ const WidgetGrid: React.FC<WidgetGridProps> = ({ selectedKeys, allWidgets, defau
           containerPadding={[0, 0]}
           useCSSTransforms={true}
           draggableHandle=".widget-title"
-          // Add bounds to prevent widgets from going behind header
           allowOverlap={false}
-          // Ensure widgets stay in bounds
           isBounded={true}
-          // Set vertical boundaries - header is ~60px + some padding
           verticalCompact={true}
-          // Prevent widgets from being dragged to Y position behind header
           onDrag={(_layout, _oldItem, newItem, placeholder) => {
-            // Prevent dragging above the header (y < 4 rows ~= 160px)
             if (newItem.y < 4) {
               newItem.y = 4;
               placeholder.y = 4;
             }
           }}
           onResize={(_layout, _oldItem, newItem, placeholder) => {
-            // Prevent resizing above the header
             if (newItem.y < 4) {
               newItem.y = 4;
               placeholder.y = 4;

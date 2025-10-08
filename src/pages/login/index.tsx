@@ -44,8 +44,8 @@ const LoginPage: React.FC = () => {
             localStorage.setItem('user_id', usuario.id.toString());
           }
         } catch (e) {
-          console.log(e)
-        }
+          console.error('Erro ao buscar usuários:', e);
+          }
       }
 
     } catch (error: unknown) {

@@ -1,30 +1,45 @@
 import React, { useState } from "react";
-import { SettingFilled, BellFilled } from '@ant-design/icons';
-import ConfigModal from './ConfigModal';
+import { SettingFilled, BellFilled, UserOutlined } from '@ant-design/icons';
+import { Avatar } from 'antd';
+import ConfigModal from './config/ConfigModal';
 import type { Usuario } from '../types/usuario';
 
-interface UniversalHeaderProps {
+interface Header {
   userName: string;
   title?: string;
   showTitle?: boolean;
   currentUser?: Usuario;
   onUpdateProfile?: (updatedUser: Usuario) => void;
+  isLoading?: boolean;
+  loadError?: string | null;
+  onRefreshUser?: () => Promise<void>;
 }
 
-const UniversalHeader: React.FC<UniversalHeaderProps> = ({ 
+const Header: React.FC<Header> = ({ 
   userName, 
   title = "", 
   showTitle = false,
   currentUser,
-  onUpdateProfile
+  onUpdateProfile,
+  isLoading = false,
+  loadError = null,
+  onRefreshUser
 }) => {
+  // Get the display name with fallbacks
+  const displayName = currentUser?.nome || userName || 'Usuário';
   const [showNotifications, setShowNotifications] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
 
+  // Debug: Log current user data
+  React.useEffect(() => {
+    console.log('Header - Current user:', currentUser);
+    console.log('Header - User name prop:', userName);
+    console.log('Header - Display name:', displayName);
+  }, [currentUser, userName, displayName]);
+
   // Debug: Log modal state changes
   React.useEffect(() => {
-    console.log('showConfigModal changed:', showConfigModal);
   }, [showConfigModal]);
 
   // Close dropdowns when clicking outside
@@ -95,7 +110,6 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                   className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm text-gray-700"
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log('Profile Settings clicked'); // Debug log
                     setShowConfigModal(true);
                     setShowConfig(false);
                   }}
@@ -105,6 +119,23 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                 <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm text-gray-700">
                   Configurações de Notificações
                 </button>
+                {onRefreshUser && (
+                  <button 
+                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm text-gray-700 disabled:opacity-50"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await onRefreshUser();
+                        setShowConfig(false);
+                      } catch (error) {
+                        console.error('Failed to refresh user data:', error);
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Recarregando...' : 'Recarregar Perfil'}
+                  </button>
+                )}
                 <div className="border-t pt-2 mt-2">
                   <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm text-red-600">
                     Sair
@@ -152,22 +183,39 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
 
         {/* User display */}
         <div className="flex items-center gap-3 ml-3">
-          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
-            {currentUser?.profilePhoto ? (
-              <img 
-                src={currentUser.profilePhoto} 
-                alt="Profile" 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-white text-lg font-semibold">
-                {userName.charAt(0).toUpperCase()}
+          <Avatar
+            size={40}
+            icon={<UserOutlined />}
+            className={`border-2 border-white/20 ${isLoading ? 'animate-pulse' : ''}`}
+            style={{
+              color: '#fff',
+              backgroundColor: loadError ? '#dc2626' : '#BA8364'
+            }}
+          >
+          </Avatar>
+          <div className="flex flex-col">
+            <span 
+              className={`font-medium text-sm ${loadError ? 'text-red-300' : 'text-white'}`}
+              style={{ minWidth: '80px' }}
+              title={loadError || displayName}
+            >
+              {displayName}
+            </span>
+            {!isLoading && !loadError && currentUser?.email && (
+              <span className="text-white/70 text-xs truncate" style={{ maxWidth: '150px' }}>
+                {currentUser.email}
               </span>
             )}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-white font-medium">{userName}</span>
-            <span className="text-white/70 text-sm">Online</span>
+            {loadError && (
+              <span className="text-red-300 text-xs truncate" style={{ maxWidth: '150px' }}>
+                {loadError}
+              </span>
+            )}
+            {isLoading && (
+              <span className="text-white/70 text-xs animate-pulse">
+                Carregando...
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -183,4 +231,4 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   );
 };
 
-export default UniversalHeader;
+export default Header;

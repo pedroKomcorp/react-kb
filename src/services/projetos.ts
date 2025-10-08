@@ -20,7 +20,7 @@ export const getProjetos = async (
   return res.data;
 };
 
-export const getProjeto = async (id: number, token?: string) => {
+export const getProjetoByID = async (id: number, token?: string) => {
   const res = await api.get<Projeto>(
     `/projetos/${id}`,
     token ? authHeaders(token) : undefined

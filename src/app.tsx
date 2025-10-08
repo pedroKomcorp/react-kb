@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute.tsx';
 import MainLayout from './components/MainLayout.tsx'; // 👈 Import the new layout
 import HomePage from './pages/home/index.tsx';
 import ProjetosPage from './pages/gestao/projetos/index.tsx';
+import ClientesPage from './pages/gestao/clientes/index.tsx';
 import { DemandasPage } from './pages/operacional/demandas/index.tsx';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
             <Route path="home" element={<HomePage />} />
             <Route path="gestao/" element={<Outlet />}>
               <Route path="projetos" element={<ProjetosPage />} />
+              <Route path="clientes" element={<ClientesPage />} />
               <Route path="*" element={<div>Esta Página não existe dentro de Gestão</div>} />
             </Route>
             <Route path="operacional/" element={<Outlet />}>

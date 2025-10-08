@@ -9,48 +9,87 @@ export const getUsuarios = async () => {
   return res.data.usuarios;
 };
 
-export const getUsuario = async (id: number) => {
-  const token = localStorage.getItem('token');
-  const res = await api.get<Usuario>(`/usuario/${id}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined
-  });
-  return res.data;
-};
+export const getUsuario = async (id: number): Promise<Usuario> => {
+  // Validate input
+  if (!id || id <= 0) {
+    throw new Error('ID do usuário inválido');
+  }
 
-// Profile-specific API functions
-export const getCurrentUserProfile = async () => {
   const token = localStorage.getItem('token');
-  const res = await api.get<Usuario>('/usuario/profile', {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined
-  });
-  return res.data;
-};
-
-export const updateUserProfile = async (profileData: Partial<Pick<Usuario, 'nome' | 'email' | 'profilePhoto'>>) => {
-  const token = localStorage.getItem('token');
-  const res = await api.put<Usuario>('/usuario/profile', profileData, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined
-  });
-  return res.data;
-};
-
-export const uploadProfilePhoto = async (photoFile: File) => {
-  const token = localStorage.getItem('token');
-  const formData = new FormData();
-  formData.append('profilePhoto', photoFile);
   
-  const res = await api.post<{ profilePhotoUrl: string }>('/usuario/profile/photo', formData, {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'Content-Type': 'multipart/form-data'
+  if (!token) {
+    throw new Error('Token de autenticação não encontrado');
+  }
+
+  try {
+    console.log(`Fetching user data for ID: ${id}`);
+    
+    const res = await api.get<Usuario>(`/usuario/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    // Validate response data
+    if (!res.data) {
+      throw new Error('Dados do usuário não encontrados na resposta');
     }
-  });
-  return res.data.profilePhotoUrl;
+    
+    if (!res.data.nome || !res.data.email) {
+      console.warn('User data incomplete:', res.data);
+    }
+    
+    console.log('User data loaded successfully:', res.data);
+    return res.data;
+    
+  } catch (error: unknown) {
+    console.error('Error fetching user:', error);
+    
+    // Handle axios errors
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { status: number } };
+      
+      if (axiosError.response?.status === 404) {
+        throw new Error('Usuário não encontrado');
+      } else if (axiosError.response?.status === 401) {
+        throw new Error('Token de autenticação inválido');
+      } else if (axiosError.response?.status === 403) {
+        throw new Error('Acesso negado');
+      }
+    }
+    
+    // Handle network errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const networkError = error as { code: string };
+      if (networkError.code === 'NETWORK_ERROR') {
+        throw new Error('Erro de conexão com o servidor');
+      }
+    }
+    
+    // Re-throw the original error if it's not handled above
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    throw new Error('Erro desconhecido ao carregar usuário');
+  }
 };
 
-export const deleteProfilePhoto = async () => {
+
+export interface UpdateUsuarioData {
+  id: number;
+  nome: string;
+  email: string;
+  senha: string; // current or new password
+}
+
+export const updateUsuario = async (data: UpdateUsuarioData) => {
   const token = localStorage.getItem('token');
-  await api.delete('/usuario/profile/photo', {
+  const { id, nome, email, senha } = data;
+  const payload = { nome, email, senha };
+  const res = await api.put<Usuario>(`/usuario/${id}`, payload, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined
   });
+  return res.data;
 };
+
+
+

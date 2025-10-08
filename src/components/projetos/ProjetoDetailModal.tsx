@@ -16,8 +16,9 @@ interface ProjetoDetailModalProps {
   onUpdateEtapa: (etapa: Partial<Etapa> & { id: number }) => void;
   onDeleteEtapa: (etapaId: number) => void;
   loading?: boolean;
-  // --- NEW PROP ADDED ---
   canEditProjeto?: boolean;
+  canAddEtapa?: boolean;
+  canEditEtapa?: boolean;
 }
 
 const { Title, Text } = Typography;
@@ -67,6 +68,8 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
   loading,
   // --- DESTRUCTURED WITH DEFAULT VALUE ---
   canEditProjeto = true,
+  canAddEtapa = true,
+  canEditEtapa = true,
 }) => {
   // State for toggling UI sections
   const [isAddingEtapa, setIsAddingEtapa] = useState(false);
@@ -239,16 +242,18 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
         <div>
             <div className="flex justify-between items-center mb-2">
                 <Title level={5}>Etapas ({Array.isArray(editedProjeto.etapas) ? editedProjeto.etapas.length : 0})</Title>
-                <Button type="primary" ghost icon={<PlusOutlined />} onClick={() => setIsAddingEtapa(v => !v)}>
-                    {isAddingEtapa ? 'Cancelar' : 'Adicionar Etapa'}
-                </Button>
+                {canAddEtapa && (
+                    <Button type="primary" ghost icon={<PlusOutlined />} onClick={() => setIsAddingEtapa(v => !v)}>
+                        {isAddingEtapa ? 'Cancelar' : 'Adicionar Etapa'}
+                    </Button>
+                )}
             </div>
 
-            {isAddingEtapa && (
+            {isAddingEtapa && canAddEtapa && (
               <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-dashed">
                 <Space direction="vertical" style={{ width: '100%' }} size="middle">
                     <Input value={newEtapa.nome} onChange={e => setNewEtapa(s => ({...s, nome: e.target.value}))} placeholder="Nome da nova etapa" />
-                    <Input.TextArea value={newEtapa.descricao} onChange={e => setNewEtapa(s => ({...s, descricao: e.target.value}))} placeholder="Descrição da etapa" rows={2}/>
+                    <Input.TextArea value={newEtapa.descricao || ''} onChange={e => setNewEtapa(s => ({...s, descricao: e.target.value}))} placeholder="Descrição da etapa" rows={2}/>
                     <Select
                       showSearch
                       placeholder="Selecione o responsável pela etapa"
@@ -262,9 +267,9 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                     />
                     <Space wrap>
                         <Select value={newEtapa.status} onChange={val => setNewEtapa(s => ({...s, status: val as StatusEtapaEnum}))} options={statusOptions.map(s => ({value: s.value, label: s.label}))} style={{ width: 150 }} placeholder="Status" />
-                        <Input addonBefore="Início" value={newEtapa.data_inicio} onChange={e => setNewEtapa(s => ({...s, data_inicio: e.target.value}))} type="date" style={{ width: 200 }} />
-                        <Input addonBefore="Prazo" value={newEtapa.data_prazo} onChange={e => setNewEtapa(s => ({...s, data_prazo: e.target.value}))} type="date" style={{ width: 200 }} />
-                        <Input addonBefore="Fim" value={newEtapa.data_fim} onChange={e => setNewEtapa(s => ({...s, data_fim: e.target.value}))} type="date" style={{ width: 200 }} />
+                        <Input addonBefore="Início" value={newEtapa.data_inicio || ''} onChange={e => setNewEtapa(s => ({...s, data_inicio: e.target.value}))} type="date" style={{ width: 200 }} />
+                        <Input addonBefore="Prazo" value={newEtapa.data_prazo || ''} onChange={e => setNewEtapa(s => ({...s, data_prazo: e.target.value}))} type="date" style={{ width: 200 }} />
+                        <Input addonBefore="Fim" value={newEtapa.data_fim || ''} onChange={e => setNewEtapa(s => ({...s, data_fim: e.target.value}))} type="date" style={{ width: 200 }} />
                     </Space>
                     <Button type="primary" loading={loading} onClick={handleAddEtapa} icon={<SaveOutlined />}>Salvar Etapa</Button>
                 </Space>
@@ -316,9 +321,9 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
 
                   return (
                       <List.Item
-                          actions={[
+                          actions={canEditEtapa ? [
                               <Button type="link" onClick={(e) => { e.stopPropagation(); handleStartEditEtapa(etapa); }}>Editar</Button>
-                          ]}
+                          ] : []}
                           className="hover:bg-gray-50 rounded-md cursor-pointer"
                           onClick={() => onSelectEtapa(etapa)}
                       >

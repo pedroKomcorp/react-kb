@@ -16,14 +16,11 @@ const EtapasList: React.FC<EtapasListProps> = ({ etapas, loading, onSelectEtapa,
     <List
       className="w-full"
       style={{ width: '100%' }}
-      split={false}
       dataSource={etapas}
       loading={loading}
       locale={{ emptyText: 'Nenhuma etapa cadastrada.' }}
-      renderItem={(etapa, index) => (
-        <div key={etapa.id} className={index > 0 ? 'mt-6' : ''}>
-          <EtapaCard etapa={etapa} onClick={() => onSelectEtapa(etapa)} onDeleteEtapa={onDeleteEtapa} />
-        </div>
+      renderItem={etapa => (
+        <EtapaCard etapa={etapa} onClick={() => onSelectEtapa(etapa)} onDeleteEtapa={onDeleteEtapa} />
       )}
     />
   </Card>

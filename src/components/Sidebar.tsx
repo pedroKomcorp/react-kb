@@ -18,6 +18,7 @@ const sidebarItems = [
       { name: 'Demandas', url: '/operacional/demandas' },
       { name: 'Consultoria', url: '/operacional/consultoria' },
       { name: 'Controle Crédito', url: '/operacional/credito' },
+      { name: 'Radar', url: '/operacional/radar' },
     ],
   },
   {
@@ -27,6 +28,7 @@ const sidebarItems = [
       { name: 'Projetos', url: '/gestao/projetos' },
       { name: 'Sprints', url: '/gestao/sprints' },
       { name: 'Usuários', url: '/gestao/usuarios' },
+      { name: 'Clientes', url: '/gestao/clientes' },
     ],
   },
   {
@@ -174,7 +176,7 @@ const Sidebar: React.FC = () => {
       <div className="p-5 hover:bg-black/40">
         <button
           onClick={() => handleSair()}
-          className="w-full flex items-center gap-4 pr-3 pt-1 pb-2 text-white font-semibold transition-colors duration-200  rounded-lg"
+          className="w-full flex items-center gap-4 pr-3 pt-1 pb-2 text-white font-semibold transition-colors duration-600  rounded-lg"
         >
           <ArrowRightOnRectangleIcon className="w-6 h-6 shrink-0" />
           <SidebarItem>Sair</SidebarItem>

@@ -80,10 +80,7 @@ const HomePage: React.FC = () => {
       <button 
         className="fixed bottom-8 right-8 w-14 h-14 bg-white/20 hover:bg-white/60 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out shadow-lg backdrop-blur-sm z-50"
         title="Undo Last Action"
-        onClick={() => {
-          // Add undo functionality here
-          console.log('Undo clicked');
-        }}
+        onClick={() => {}}
       >
         <UndoOutlined 
           style={{ fontSize: '24px', color: 'white' }} 

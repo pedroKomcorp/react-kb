@@ -1,12 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { Spin, Input, Select } from 'antd';
-import { getProjetos } from '../../../services/projetos';
+import { getProjetos, getProjetoByID } from '../../../services/projetos';
 import { getUsuarios } from '../../../services/usuarios';
+import { getEtapasByProjeto } from '../../../services/etapas';
 import ProjetoCarouselCard from './ProjetoCarouselCard';
 import ProjetoDetailModal from '../../projetos/ProjetoDetailModal';
+import EtapaDetailModal from '../../etapas/EtapaDetailModal';
 import type { Projeto } from '../../../types/projeto';
 import type { Usuario } from '../../../types/usuario';
+import type { Etapa } from '../../../types/etapa';
 
 
 const ProjetosWidget: React.FC = () => {
@@ -14,12 +18,12 @@ const ProjetosWidget: React.FC = () => {
 		const [usuarios, setUsuarios] = useState<Usuario[]>([]);
 		const [loading, setLoading] = useState(true);
 		const [selectedProjeto, setSelectedProjeto] = useState<Projeto | null>(null);
+		const [loadingSelectedProjeto, setLoadingSelectedProjeto] = useState(false);
+		const [selectedEtapa, setSelectedEtapa] = useState<Etapa | null>(null);
 		const carouselRef = useRef<HTMLDivElement>(null);
 		const [canScrollLeft, setCanScrollLeft] = useState(false);
 		const [canScrollRight, setCanScrollRight] = useState(false);
-		const [cardWidth, setCardWidth] = useState(180); // Estado para a largura dinâmica do card
-		const [cardsToShow, setCardsToShow] = useState<number>(4);
-		// Filtros
+		const [cardWidth, setCardWidth] = useState(180); 
 		const [nome, setNome] = useState('');
 		const [status, setStatus] = useState('');
 		const [categoria, setCategoria] = useState('');
@@ -36,15 +40,11 @@ const ProjetosWidget: React.FC = () => {
 							setUsuarios(allUsuarios);
 							const userId = Number(localStorage.getItem('user_id'));
 							
-							console.log("Original Projects:", allProjetos);
-							console.log("Filtering for user ID:", userId);
 
 							const filtered = allProjetos.filter(p =>
 									p.responsavel_id === userId ||
 									(p.anexados && p.anexados.some(anexado => anexado.id === userId))
 							);
-							
-							console.log("Filtered Projects:", filtered);
 							setProjetos(filtered);
 
 					} finally {
@@ -53,6 +53,36 @@ const ProjetosWidget: React.FC = () => {
 			}
 			fetchData();
 	}, []);
+
+	// Function to handle project selection and fetch detailed data
+	const handleProjetoSelection = async (projeto: Projeto) => {
+		setLoadingSelectedProjeto(true);
+		try {
+			// Get token for authentication
+			const token = localStorage.getItem('token');
+			
+			// Fetch both project details and its etapas in parallel
+			const [detailedProjeto, etapas] = await Promise.all([
+				getProjetoByID(projeto.id, token || undefined),
+				getEtapasByProjeto(projeto.id)
+			]);
+			
+			
+			// Combine the project with its etapas
+			const projetoWithEtapas = {
+				...detailedProjeto,
+				etapas: etapas
+			};
+			
+			setSelectedProjeto(projetoWithEtapas);
+		} catch (error) {
+			console.error('Error fetching project details:', error);
+			// Fallback to the basic project data if detailed fetch fails
+			setSelectedProjeto(projeto);
+		} finally {
+			setLoadingSelectedProjeto(false);
+		}
+	};
 
 		// Enhanced responsive card size calculation
 		useLayoutEffect(() => {
@@ -91,10 +121,6 @@ const ProjetosWidget: React.FC = () => {
 					
 					const newCardWidth = Math.max(cardMinWidth, Math.min(280, calculatedWidth));
 					setCardWidth(newCardWidth);
-					
-					// Set an integer number of cards to show that fits the container
-					const actualCardsVisible = Math.floor((containerWidth + gapSize) / (newCardWidth + gapSize));
-					setCardsToShow(Math.max(1, Math.min(6, actualCardsVisible)));
 				}
 			}
 			window.addEventListener('resize', updateCardSize);
@@ -124,8 +150,7 @@ const ProjetosWidget: React.FC = () => {
 			{ value: 'BA', label: 'Baixa' },
 		];
 
-			// Aplica filtros
-			const projetosFiltrados = projetos.filter(p =>
+		const projetosFiltrados = projetos.filter(p =>
 				(nome === '' || p.nome.toLowerCase().includes(nome.toLowerCase())) &&
 				(status === '' || p.status === status) &&
 				(categoria === '' || p.categoria === categoria) &&
@@ -252,7 +277,7 @@ const ProjetosWidget: React.FC = () => {
 																	<ProjetoCarouselCard
 																		projeto={projeto}
 																		usuarios={usuarios}
-																		onClick={() => setSelectedProjeto(projeto)}
+																		onClick={() => handleProjetoSelection(projeto)}
 																	/>
 																</div>
 															))
@@ -296,17 +321,27 @@ const ProjetosWidget: React.FC = () => {
 				<ProjetoDetailModal
 					projeto={selectedProjeto}
 					usuarios={usuarios}
-					open={!!selectedProjeto}
+					open={!!selectedProjeto || loadingSelectedProjeto}
+					loading={loadingSelectedProjeto}
 					canEditProjeto={false}
+					canEditEtapa={false}
+					canAddEtapa={false}
 					onClose={() => setSelectedProjeto(null)}
 					onAddEtapa={() => {}}
-					onSelectEtapa={() => {}}
+					onSelectEtapa={(etapa) => setSelectedEtapa(etapa)}
 					onUpdateProjeto={() => {}}
 					onUpdateEtapa={() => {}}
 					onDeleteEtapa={() => {}}
 				/>
+				<EtapaDetailModal
+					etapa={selectedEtapa}
+					usuarios={usuarios}
+					open={!!selectedEtapa}
+					onClose={() => setSelectedEtapa(null)}
+				/>
 			</div>
 		);
 	};
+
 
 export default ProjetosWidget;
