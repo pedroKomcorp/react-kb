@@ -1,43 +1,68 @@
 // Status do crédito
 export const StatusCreditoEnum = {
-  ATIVO: 'ATIVO',
-  QUITADO: 'QUITADO',
-  CANCELADO: 'CANCELADO'
+  EM_ANDAMENTO: 'em_andamento',
+  HABILITADO: 'habilitado',
+  COMPENSADO: 'compensado',
+  INDEFERIDO: 'indeferido',
+  PARCIALMENTE_COMPENSADO: 'parcialmente_compensado',
+  AGUARDANDO_HABILITACAO: 'aguardando_habilitacao'
 } as const;
 
 export type StatusCredito = typeof StatusCreditoEnum[keyof typeof StatusCreditoEnum];
-
-// Tipo de movimentação
-export const TipoMovimentacaoEnum = {
-  COMPENSACAO: 'COMPENSACAO',
-  ATUALIZACAO_SELIC: 'ATUALIZACAO_SELIC',
-  CALCULO_MENSAL: 'CALCULO_MENSAL',
-  DESCONTO: 'DESCONTO',
-  AJUSTE_MANUAL: 'AJUSTE_MANUAL'
-} as const;
-
-export type TipoMovimentacao = typeof TipoMovimentacaoEnum[keyof typeof TipoMovimentacaoEnum];
 
 // Crédito principal
 export interface Credito {
   id: number;
   cliente_id: number;
+  nome: string;
+  descricao?: string;
   valor_original: number;
   saldo_atual: number;
   status: StatusCredito;
-  data_vencimento?: string | null;
-  descricao: string;
+  tem_atualizacao_selic: boolean;
   created_at: string;
   updated_at: string;
-  // Relacionamentos
   cliente?: {
     id: number;
     nome: string;
     cnpj: string;
     estado: string;
   };
-  movimentacoes?: MovimentacaoCredito[];
 }
+
+export interface CreateCreditoData {
+  cliente_id: number;
+  nome: string;
+  descricao?: string;
+  valor_original: number;
+  status?: StatusCredito;
+  tem_atualizacao_selic?: boolean;
+  created_at?: string;
+}
+
+export interface UpdateCreditoData {
+  nome?: string;
+  descricao?: string;
+  valor_original?: number;
+  saldo_atual?: number;
+  status?: StatusCredito;
+  tem_atualizacao_selic?: boolean;
+}
+
+export interface CreditoFilters {
+  cliente_id?: number;
+  status?: StatusCredito;
+  page?: number;
+  size?: number;
+}
+
+export const TipoMovimentacaoEnum = {
+  COMPENSACAO: 'COMPENSACAO',
+  ATUALIZACAO_SELIC: 'ATUALIZACAO_SELIC',
+  REAJUSTE: 'REAJUSTE'
+} as const;
+
+export type TipoMovimentacao = typeof TipoMovimentacaoEnum[keyof typeof TipoMovimentacaoEnum];
 
 // Movimentação de crédito
 export interface MovimentacaoCredito {
@@ -48,42 +73,41 @@ export interface MovimentacaoCredito {
   saldo_anterior: number;
   saldo_posterior: number;
   descricao: string;
-  referencia_externa?: string | null;
   created_at: string;
   updated_at: string;
-  // Relacionamento
-  credito?: Credito;
-}
-
-// DTOs para criação
-export interface CreateCreditoData {
-  cliente_id: number;
-  valor_original: number;
-  data_vencimento?: string | null;
-  descricao: string;
 }
 
 export interface CreateMovimentacaoData {
   tipo: TipoMovimentacao;
   valor: number;
   descricao: string;
-  referencia_externa?: string | null;
+  created_at?: string; // Data customizável para a movimentação
 }
 
-// DTOs para atualização
-export interface UpdateCreditoData {
-  valor_original?: number;
-  status?: StatusCredito;
-  data_vencimento?: string | null;
+export interface UpdateMovimentacaoData {
+  tipo?: TipoMovimentacao;
+  valor?: number;
   descricao?: string;
+  created_at?: string;
 }
 
-// Tipos para filtros e listagem
-export interface CreditoFilters {
-  cliente_id?: number;
-  status?: StatusCredito;
-  page?: number;
-  size?: number;
+// Response types
+export interface CreditoListResponse {
+  creditos: Credito[];
+  total: number;
+  page: number;
+  size: number;
+  total_pages: number;
+}
+
+export interface ClienteCreditosResponse {
+  creditos: Credito[];
+  cliente: {
+    id: number;
+    nome: string;
+    cnpj: string;
+    estado: string;
+  };
 }
 
 export interface CreditoListResponse {
@@ -97,4 +121,9 @@ export interface CreditoListResponse {
 // Response for client-specific credits
 export interface ClienteCreditosResponse {
   creditos: Credito[];
+}
+
+// Response for movimentações
+export interface MovimentacoesResponse {
+  movimentacoes: MovimentacaoCredito[];
 }

@@ -26,8 +26,6 @@ const sidebarItems = [
     icon_name: 'user-group',
     sub_options: [
       { name: 'Projetos', url: '/gestao/projetos' },
-      { name: 'Sprints', url: '/gestao/sprints' },
-      { name: 'Usuários', url: '/gestao/usuarios' },
       { name: 'Clientes', url: '/gestao/clientes' },
     ],
   },

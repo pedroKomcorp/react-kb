@@ -7,6 +7,7 @@ import HomePage from './pages/home/index.tsx';
 import ProjetosPage from './pages/gestao/projetos/index.tsx';
 import ClientesPage from './pages/gestao/clientes/index.tsx';
 import { DemandasPage } from './pages/operacional/demandas/index.tsx';
+import CreditoPage from './pages/operacional/credito/index.tsx';
 
 function App() {
 
@@ -25,6 +26,7 @@ function App() {
             </Route>
             <Route path="operacional/" element={<Outlet />}>
               <Route path="demandas" element={<DemandasPage />} />
+              <Route path="credito" element={<CreditoPage />} />
               <Route path="*" element={<div>Esta Página não existe dentro de Operacional</div>} />
             </Route>
             <Route path="comercial/" element={<Outlet />}>

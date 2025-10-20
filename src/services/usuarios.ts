@@ -22,7 +22,6 @@ export const getUsuario = async (id: number): Promise<Usuario> => {
   }
 
   try {
-    console.log(`Fetching user data for ID: ${id}`);
     
     const res = await api.get<Usuario>(`/usuario/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -37,7 +36,6 @@ export const getUsuario = async (id: number): Promise<Usuario> => {
       console.warn('User data incomplete:', res.data);
     }
     
-    console.log('User data loaded successfully:', res.data);
     return res.data;
     
   } catch (error: unknown) {
@@ -78,7 +76,7 @@ export interface UpdateUsuarioData {
   id: number;
   nome: string;
   email: string;
-  senha: string; // current or new password
+  senha: string;
 }
 
 export const updateUsuario = async (data: UpdateUsuarioData) => {

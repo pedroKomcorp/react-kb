@@ -17,12 +17,10 @@ const getCachedUser = async (userId: number): Promise<Usuario> => {
   
   // Return cached data if it's still valid
   if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-    console.log('Using cached user data for ID:', userId);
     return cached.user;
   }
   
   // Fetch from API and cache the result
-  console.log('Fetching fresh user data for ID:', userId);
   const user = await getUsuario(userId);
   userCache.set(userId, { user, timestamp: now });
   
@@ -31,7 +29,6 @@ const getCachedUser = async (userId: number): Promise<Usuario> => {
 
 // Helper function to clear user cache (useful for debugging)
 const clearUserCache = () => {
-  console.log('Clearing user cache');
   userCache.clear();
 };
 
@@ -55,8 +52,6 @@ const MainLayout: React.FC = () => {
       
       try {
         const userId = localStorage.getItem('user_id');
-        console.log('MainLayout: Loading user with ID:', userId);
-        
         if (!userId) {
           setUserLoadError('ID do usuário não encontrado no armazenamento local');
           console.warn('MainLayout: No user ID found in localStorage');
@@ -73,7 +68,6 @@ const MainLayout: React.FC = () => {
         }
         
         const user = await getCachedUser(userIdNumber);
-        console.log('MainLayout: Loaded user data successfully:', user);
         setCurrentUser(user);
         setUserLoadError(null);
         
@@ -98,7 +92,6 @@ const MainLayout: React.FC = () => {
 
   // Debug: Track currentUser changes
   useEffect(() => {
-    console.log('MainLayout - Current user changed:', currentUser);
   }, [currentUser]);
 
   const handleUpdateProfile = (updatedUser: Usuario) => {

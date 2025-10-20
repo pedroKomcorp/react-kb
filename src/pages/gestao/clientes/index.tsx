@@ -1,36 +1,76 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Input, message, Space, Select } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import { getClientes, createCliente, updateCliente, deleteCliente } from '../../../services/clientes';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { Table, Button, message, Space, Popconfirm } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { getClientes, deleteCliente } from '../../../services/clientes';
+import ClienteFormModal from '../../../components/cliente/ClienteFormModal';
+import { useResponsive } from '../../../hooks/useResponsive';
 import type { Cliente } from '../../../types/cliente';
 
 const ClientesPage: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Custom pagination styles
+  const paginationStyle = `
+    .custom-pagination .ant-pagination-item {
+      background-color: #f0f8ff !important;
+      border: 2px solid #1890ff !important;
+      border-radius: 8px !important;
+      margin: 0 4px !important;
+      transition: all 0.3s ease !important;
+    }
+    
+    .custom-pagination .ant-pagination-item:hover {
+      background-color: #e6f7ff !important;
+      border-color: #40a9ff !important;
+      transform: translateY(-1px) !important;
+    }
+    
+    .custom-pagination .ant-pagination-item-active {
+      background-color: #1890ff !important;
+      border-color: #1890ff !important;
+    }
+    
+    .custom-pagination .ant-pagination-item-active a {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+    
+    .custom-pagination .ant-pagination-item a {
+      color: #1890ff !important;
+      font-weight: 500 !important;
+    }
+    
+    .custom-pagination .ant-pagination-prev,
+    .custom-pagination .ant-pagination-next {
+      background-color: #f0f8ff !important;
+      border: 2px solid #1890ff !important;
+      border-radius: 8px !important;
+      color: #1890ff !important;
+    }
+    
+    .custom-pagination .ant-pagination-prev:hover,
+    .custom-pagination .ant-pagination-next:hover {
+      background-color: #e6f7ff !important;
+      border-color: #40a9ff !important;
+      color: #40a9ff !important;
+    }
+    
+    .custom-pagination .ant-pagination-jump-prev,
+    .custom-pagination .ant-pagination-jump-next {
+      color: #1890ff !important;
+    }
+  `;
   const [showModal, setShowModal] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
-  const [nome, setNome] = useState('');
-  const [cnpj, setCnpj] = useState('');
-  const [estado, setEstado] = useState('');
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [deleting, setDeleting] = useState<number | null>(null);
 
-  const formatCNPJ = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    
-    const limitedDigits = digits.slice(0, 14);
-    
-    return limitedDigits
-      .replace(/^(\d{2})(\d)/, '$1.$2')
-      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-      .replace(/\.(\d{3})(\d)/, '.$1/$2')
-      .replace(/(\d{4})(\d)/, '$1-$2');
-  };
+  // Get responsive breakpoints
+  const { mobile, tablet, desktop } = useResponsive();
 
-  const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedValue = formatCNPJ(e.target.value);
-    setCnpj(formattedValue);
-  };
-
-  const fetchClientes = async () => {
+  const fetchClientes = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -41,173 +81,219 @@ const ClientesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchClientes();
+  }, [fetchClientes]);
+
+  const handleEdit = useCallback((cliente: Cliente) => {
+    console.log('Edit button clicked for cliente:', cliente);
+    setEditingCliente(cliente);
+    setModalMode('edit');
+    setShowModal(true);
+    console.log('Modal should be open now. showModal:', true, 'mode:', 'edit');
   }, []);
 
-  const handleEdit = (cliente: Cliente) => {
-    setEditingCliente(cliente);
-    setNome(cliente.nome);
-    setCnpj(cliente.cnpj);
-    setEstado(cliente.estado);
-    setShowModal(true);
-  };
-
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingCliente(null);
-    setNome('');
-    setCnpj('');
-    setEstado('');
+    setModalMode('create');
     setShowModal(true);
+  }, []);
+
+  const handleModalSuccess = useCallback((cliente: Cliente) => {
+    console.log('Modal success called with cliente:', cliente);
+    fetchClientes();
+    setShowModal(false);
+    setEditingCliente(null);
+  }, [fetchClientes]);
+
+  const handleDelete = useCallback(async (id: number) => {
+    setDeleting(id);
+    try {
+      await deleteCliente(id);
+      message.success('Cliente removido com sucesso!');
+      fetchClientes();
+    } catch (error) {
+      console.error('Error deleting cliente:', error);
+      message.error('Erro ao deletar cliente');
+    } finally {
+      setDeleting(null);
+    }
+  }, [fetchClientes]);
+
+  const formatCNPJ = (cnpj: string) => {
+    if (!cnpj) return '';
+    const digits = cnpj.replace(/\D/g, '');
+    return digits.replace(
+      /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+      '$1.$2.$3/$4-$5'
+    );
   };
 
-  const handleSave = async () => {
-    if (!nome.trim() || !cnpj.trim() || !estado.trim()) {
-      message.error('Preencha todos os campos.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (editingCliente) {
-        await updateCliente(editingCliente.id, { nome, cnpj, estado }, token || undefined);
-        message.success('Cliente atualizado!');
-      } else {
-        await createCliente({ nome, cnpj, estado }, token || undefined);
-        message.success('Cliente criado!');
+  // Responsive columns configuration
+  const columns = useMemo(() => {
+    const baseColumns: ColumnsType<Cliente> = [
+      { 
+        title: 'Nome', 
+        key: 'nome_display',
+        render: (record: Cliente) => (
+          <div>
+            <div className="font-medium">
+              {record.nome_fantasia || record.nome || record.razao_social}
+            </div>
+            {mobile && (
+              <div className="text-xs text-gray-500">
+                {formatCNPJ(record.cnpj_cpf || record.cnpj || '')}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        title: 'Ações',
+        key: 'acoes',
+        width: mobile ? 100 : 150,
+        render: (record: Cliente) => {
+          console.log('Rendering actions for record:', record.id);
+          return (
+          <Space size={mobile ? "small" : "middle"}>
+            <Button 
+              size="small" 
+              icon={<EditOutlined />} 
+              onClick={() => {
+                console.log('Edit button clicked for record:', record);
+                handleEdit(record);
+              }}
+            >
+              {mobile ? '' : 'Editar'}
+            </Button>
+            <Popconfirm
+              title="Deletar Cliente"
+              description="Tem certeza que deseja deletar este cliente? Esta ação não pode ser desfeita."
+              onConfirm={() => record.id && handleDelete(record.id)}
+              okText="Sim"
+              cancelText="Não"
+              okButtonProps={{ loading: deleting === record.id }}
+            >
+              <Button 
+                size="small" 
+                danger 
+                icon={<DeleteOutlined />} 
+                loading={deleting === record.id}
+              >
+                {mobile ? '' : 'Excluir'}
+              </Button>
+            </Popconfirm>
+          </Space>
+          );
+        }
       }
-      setShowModal(false);
-      fetchClientes();
-    } catch (e) {
-      message.error(`Erro ao salvar cliente. ${e}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+    ];
 
-  const handleDelete = async (id: number) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      await deleteCliente(id, token || undefined);
-      message.success('Cliente removido!');
-      fetchClientes();
-    } catch (e) {
-      message.error(`Erro ao remover cliente. ${e}`);
-    } finally {
-      setLoading(false);
+    // Add more columns based on screen size
+    if (!mobile) {
+      baseColumns.splice(1, 0, 
+        { 
+          title: 'CNPJ/CPF', 
+          key: 'cnpj_display',
+          render: (record: Cliente) => <span>{formatCNPJ(record.cnpj_cpf || record.cnpj || '')}</span>,
+          width: tablet ? 140 : 160,
+        }
+      );
     }
-  };
+
+    if (desktop) {
+      baseColumns.splice(1, 0, 
+        { 
+          title: 'ID', 
+          dataIndex: 'id', 
+          key: 'id',
+          width: 80,
+        }
+      );
+      
+      baseColumns.splice(3, 0,
+        { 
+          title: 'Razão Social', 
+          dataIndex: 'razao_social', 
+          key: 'razao_social',
+        }
+      );
+    }
+
+    if (desktop) {
+      baseColumns.splice(-1, 0,
+        { 
+          title: 'Cidade/UF', 
+          key: 'localizacao',
+          render: (record: Cliente) => <span>{`${record.cidade || ''} - ${record.estado || ''}`}</span>,
+        },
+        { 
+          title: 'Email', 
+          dataIndex: 'email', 
+          key: 'email',
+        }
+      );
+    }
+
+    return baseColumns;
+  }, [mobile, tablet, desktop, deleting, handleEdit, handleDelete]);
 
   return (
     <div className="w-full h-full flex flex-col">
+      {/* Custom Pagination Styles */}
+      <style dangerouslySetInnerHTML={{ __html: paginationStyle }} />
+      
       {/* Page Content */}
       <div className="flex-1 flex flex-col pl-20 p-4 space-y-4">
         {/* Page Title and Controls */}
         <div className="bg-transparent rounded-lg flex items-center justify-between flex-shrink-0">
           <h1 className="text-2xl font-bold text-white">CLIENTES</h1>
-          <button
-            className="px-4 py-3 bg-white/20 hover:bg-white/30 text-white rounded-md transition-colors duration-200 font-semibold flex items-center space-x-2"
+          <Button
+            className='bg-[#775343 hover:bg-[#a67c65] hover:text-white transition-colors duration-200'
+            icon={<PlusOutlined />}
             onClick={handleAdd}
-          >
-            <PlusOutlined />
-            <span>Novo Cliente</span>
-          </button>
+            >
+            Novo Cliente
+          </Button>
         </div>
+        
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
           <Table
             dataSource={clientes}
             rowKey="id"
             loading={loading}
-            style={{ width: '100%' }}
-            columns={[
-              { title: 'ID', dataIndex: 'id', key: 'id' },
-              { title: 'Nome', dataIndex: 'nome', key: 'nome' },
-              { title: 'CNPJ', dataIndex: 'cnpj', key: 'cnpj' },
-              { title: 'Estado', dataIndex: 'estado', key: 'estado' },
-              {
-                title: 'Ações',
-                key: 'acoes',
-                render: (_, record: Cliente) => (
-                  <Space>
-                    <Button onClick={() => handleEdit(record)}>Editar</Button>
-                    <Button danger onClick={() => handleDelete(record.id)}>Excluir</Button>
-                  </Space>
-                )
+            columns={columns}
+            scroll={{ x: true }}
+            pagination={{
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => 
+                `${range[0]}-${range[1]} de ${total} clientes`,
+              className: "custom-pagination",
+              style: { 
+                backgroundColor: '#ffffff',
+                padding: '20px',
+                borderRadius: '12px',
+                marginTop: '20px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                border: '1px solid #e8e8e8'
               }
-            ]}
+            }}
           />
         </div>
       </div>
-      <Modal
-        open={showModal}
-        onCancel={() => setShowModal(false)}
-        onOk={handleSave}
-        okText={editingCliente ? 'Salvar' : 'Criar'}
-        confirmLoading={loading}
-        title={editingCliente ? 'Editar Cliente' : 'Novo Cliente'}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nome</label>
-            <Input value={nome} onChange={e => setNome(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">CNPJ</label>
-            <Input 
-              value={cnpj} 
-              onChange={handleCNPJChange}
-              placeholder="00.000.000/0000-00"
-              maxLength={18}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Estado</label>
-            <Select
-              value={estado}
-              onChange={setEstado}
-              placeholder="Selecione um estado"
-              style={{ width: '100%' }}
-              showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              options={[
-                { value: 'AC', label: 'Acre' },
-                { value: 'AL', label: 'Alagoas' },
-                { value: 'AP', label: 'Amapá' },
-                { value: 'AM', label: 'Amazonas' },
-                { value: 'BA', label: 'Bahia' },
-                { value: 'CE', label: 'Ceará' },
-                { value: 'DF', label: 'Distrito Federal' },
-                { value: 'ES', label: 'Espírito Santo' },
-                { value: 'GO', label: 'Goiás' },
-                { value: 'MA', label: 'Maranhão' },
-                { value: 'MT', label: 'Mato Grosso' },
-                { value: 'MS', label: 'Mato Grosso do Sul' },
-                { value: 'MG', label: 'Minas Gerais' },
-                { value: 'PA', label: 'Pará' },
-                { value: 'PB', label: 'Paraíba' },
-                { value: 'PR', label: 'Paraná' },
-                { value: 'PE', label: 'Pernambuco' },
-                { value: 'PI', label: 'Piauí' },
-                { value: 'RJ', label: 'Rio de Janeiro' },
-                { value: 'RN', label: 'Rio Grande do Norte' },
-                { value: 'RS', label: 'Rio Grande do Sul' },
-                { value: 'RO', label: 'Rondônia' },
-                { value: 'RR', label: 'Roraima' },
-                { value: 'SC', label: 'Santa Catarina' },
-                { value: 'SP', label: 'São Paulo' },
-                { value: 'SE', label: 'Sergipe' },
-                { value: 'TO', label: 'Tocantins' }
-              ]}
-            />
-          </div>
-        </div>
-      </Modal>
+      
+      {/* Cliente Form Modal */}
+      <ClienteFormModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+        onSuccess={handleModalSuccess}
+        cliente={editingCliente}
+        mode={modalMode}
+      />
     </div>
   );
 };

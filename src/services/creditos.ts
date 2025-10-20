@@ -4,10 +4,12 @@ import type {
   MovimentacaoCredito,
   CreateCreditoData,
   CreateMovimentacaoData,
+  UpdateMovimentacaoData,
   UpdateCreditoData,
   CreditoFilters,
   CreditoListResponse,
-  ClienteCreditosResponse
+  ClienteCreditosResponse,
+  MovimentacoesResponse
 } from '../types/credito';
 
 // Helper to add token to headers
@@ -41,11 +43,15 @@ export const getCredito = async (creditoId: number, token?: string) => {
 };
 
 export const getCreditosCliente = async (clienteId: number, token?: string) => {
+  const authToken = token || localStorage.getItem('token');
   
+  if (!authToken) {
+    throw new Error('Token de autenticação não encontrado');
+  }
   try {
     const res = await api.get<ClienteCreditosResponse>(
       `/creditos/cliente/${clienteId}`,
-      token ? authHeaders(token) : undefined
+    authHeaders(authToken)
     );
     
     
@@ -74,14 +80,17 @@ export const getCreditosCliente = async (clienteId: number, token?: string) => {
 };
 
 export const createCredito = async (data: CreateCreditoData, token?: string) => {
-  
+  const authToken = token || localStorage.getItem('token');
+  if (!authToken) {
+    throw new Error('Token de autenticação não encontrado');
+  } 
   const res = await api.post<Credito>(
     '/creditos/',
     data,
-    token ? authHeaders(token) : undefined
+    authHeaders(authToken)
   );
   
-  return res.data;
+   return res.data;
 };
 
 export const updateCredito = async (
@@ -89,30 +98,60 @@ export const updateCredito = async (
   data: UpdateCreditoData,
   token?: string
 ) => {
+  const authToken = token || localStorage.getItem('token');
+  
+  if (!authToken) {
+    throw new Error('Token de autenticação não encontrado');
+  }
+
   const res = await api.put<Credito>(
     `/creditos/${creditoId}`,
     data,
-    token ? authHeaders(token) : undefined
+    authHeaders(authToken)
   );
   return res.data;
 };
 
 export const deleteCredito = async (creditoId: number, token?: string) => {
+  const authToken = token || localStorage.getItem('token');
+  
+  if (!authToken) {
+    throw new Error('Token de autenticação não encontrado');
+  }
   const res = await api.delete<{ message: string }>(
     `/creditos/${creditoId}`,
-    token ? authHeaders(token) : undefined
+    authHeaders(authToken)
   );
   return res.data;
 };
 
 // ========== MOVIMENTACOES CRUD ==========
 
-export const getMovimentacoes = async (creditoId: number, token?: string) => {
-  const res = await api.get<MovimentacaoCredito[]>(
-    `/creditos/${creditoId}/movimentacoes`,
-    token ? authHeaders(token) : undefined
-  );
-  return res.data;
+export const getMovimentacoes = async (creditoId: number, token?: string): Promise<MovimentacaoCredito[]> => {
+  
+  const authToken = token || localStorage.getItem('token');
+  
+  if (!authToken) {
+    console.error('❌ Token de autenticação não encontrado');
+    throw new Error('Token de autenticação não encontrado');
+  }
+  
+  try {
+    const res = await api.get<MovimentacoesResponse>(
+      `/creditos/${creditoId}/movimentacoes`,
+      authHeaders(authToken)
+    );
+    
+    
+    // A API retorna { "movimentacoes": [...] }, então extraímos o array
+    const movimentacoes = Array.isArray(res.data.movimentacoes) ? res.data.movimentacoes : [];
+    return movimentacoes;
+    
+  } catch (error) {
+    console.error('❌ Error loading movimentacoes:', error);
+    // Retornar array vazio em caso de erro para evitar problemas com .map()
+    return [];
+  }
 };
 
 export const createMovimentacao = async (
@@ -120,10 +159,54 @@ export const createMovimentacao = async (
   data: CreateMovimentacaoData,
   token?: string
 ) => {
+  const authToken = token || localStorage.getItem('token');
+  
+  if (!authToken) {
+    throw new Error('Token de autenticação não encontrado');
+  }
+
   const res = await api.post<MovimentacaoCredito>(
     `/creditos/${creditoId}/movimentacoes`,
     data,
-    token ? authHeaders(token) : undefined
+    authHeaders(authToken)
+  );
+  return res.data;
+};
+
+export const updateMovimentacao = async (
+  creditoId: number,
+  movimentacaoId: number,
+  data: UpdateMovimentacaoData,
+  token?: string
+) => {
+  const authToken = token || localStorage.getItem('token');
+  
+  if (!authToken) {
+    throw new Error('Token de autenticação não encontrado');
+  }
+
+  const res = await api.put<MovimentacaoCredito>(
+    `/creditos/${creditoId}/movimentacoes/${movimentacaoId}`,
+    data,
+    authHeaders(authToken)
+  );
+  return res.data;
+};
+
+export const deleteMovimentacao = async (
+  creditoId: number,
+  movimentacaoId: number,
+  token?: string
+) => {
+  const authToken = token || localStorage.getItem('token');
+  
+  if (!authToken) {
+    throw new Error('Token de autenticação não encontrado');
+  }
+
+  const res = await api.delete<{ message: string }>(
+    `/creditos/${creditoId}/movimentacoes/${movimentacaoId}`,
+    authHeaders(authToken)
   );
   return res.data;
 };

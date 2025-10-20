@@ -31,14 +31,7 @@ const Header: React.FC<Header> = ({
   const [showConfig, setShowConfig] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
 
-  // Debug: Log current user data
-  React.useEffect(() => {
-    console.log('Header - Current user:', currentUser);
-    console.log('Header - User name prop:', userName);
-    console.log('Header - Display name:', displayName);
-  }, [currentUser, userName, displayName]);
 
-  // Debug: Log modal state changes
   React.useEffect(() => {
   }, [showConfigModal]);
 
