@@ -396,7 +396,7 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
               setLoadingCreditos(true);
               try {
                 const creditos = await getCreditosCliente(projetoCliente.id);
-                setAvailableCreditos(creditos);
+                setAvailableCreditos(creditos || []);
               } catch (error) {
                 console.error('Error loading creditos:', error);
                 message.error('Erro ao carregar créditos do cliente');

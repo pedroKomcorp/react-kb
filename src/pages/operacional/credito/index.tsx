@@ -83,7 +83,7 @@ const CreditoPage: React.FC = () => {
     setLoading(true);
     try {
       const creditosData = await getCreditosCliente(clienteId);
-      setCreditos(creditosData);
+      setCreditos(creditosData || []);
     } catch (error) {
       console.error('Error loading credits:', error);
       message.error('Erro ao carregar créditos do cliente');

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Card, Empty } from 'antd';
 import { RadarChartOutlined } from '@ant-design/icons';
-import ClienteSelector from '../../../components/ClienteSelector';
+import ClienteSelector from '../../../components/cliente/ClienteSelector';
 import type { Cliente } from '../../../types/cliente';
 
 const RadarPage: React.FC = () => {
-  const [selectedCliente, setSelectedCliente] = useState<Cliente | undefined>(undefined);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
 
-  const handleClienteSelect = (cliente: Cliente | undefined) => {
+  const handleClienteSelect = (cliente: Cliente | null) => {
     setSelectedCliente(cliente);
   };
 
@@ -57,11 +57,8 @@ const RadarPage: React.FC = () => {
         {/* Client Selector - Always visible at top */}
         <div className="flex-shrink-0">
           <ClienteSelector
-            selectedCliente={selectedCliente}
-            onClienteSelect={handleClienteSelect}
-            title="Selecione um Cliente"
-            description="Escolha um cliente para visualizar os dados do radar"
-            icon={<RadarChartOutlined className="text-2xl mb-2" />}
+            selectedClient={selectedCliente}
+            onClientSelect={handleClienteSelect}
           />
         </div>
 
