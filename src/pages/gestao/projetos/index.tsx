@@ -4,17 +4,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../../services/api';
 import { createProjeto } from '../../../services/projetos';
 import { getUsuarios } from '../../../services/usuarios';
-import { Modal, Input, Space, message, Select } from 'antd';
+import { getClientes } from '../../../services/clientes';
+import { Modal, Input, message, Select } from 'antd';
 import { PlusOutlined, FolderOpenOutlined, UnorderedListOutlined } from '@ant-design/icons';
 
 import type { Usuario } from '../../../types/usuario'
 import type { Projeto } from '../../../types/projeto'
 import type { Etapa } from '../../../types/etapa'
+import type { Cliente } from '../../../types/cliente'
 import { getEtapas } from '../../../services/etapas';
 import { StatusEtapaEnum } from '../../../types/etapa';
 import EtapasList from '../../../components/etapas/EtapasList';
 import ProjetoDetailModal from '../../../components/projetos/ProjetoDetailModal';
 import ProjetosList from '../../../components/projetos/ProjetosList';
+import ClienteSelector from '../../../components/cliente/ClienteSelector';
 
 
 const ProjetosPage: React.FC = () => {
@@ -46,6 +49,7 @@ const ProjetosPage: React.FC = () => {
   };
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -57,13 +61,15 @@ const ProjetosPage: React.FC = () => {
     Promise.all([
       api.get('/projetos/', { params: { offset, limit } }),
       getUsuarios(),
-      getEtapas()
+      getEtapas(),
+      getClientes()
     ])
-      .then(([projetosRes, usuarios, etapas]) => {
+      .then(([projetosRes, usuarios, etapas, clientes]) => {
         setProjetos(projetosRes.data.projetos || []);
         setTotal(projetosRes.data.total || projetosRes.data.projetos?.length || 0);
         setUsuarios(usuarios || []);
         setEtapas(etapas || []);
+        setClientes(clientes || []);
       })
       .catch(() => {
         message.error('Erro ao carregar projetos, etapas ou usuários');
@@ -78,8 +84,9 @@ const ProjetosPage: React.FC = () => {
   const [novoProjetoNome, setNovoProjetoNome] = useState('');
   const [novoProjetoPrioridade, setNovoProjetoPrioridade] = useState<'UT' | 'AL' | 'MD' | 'BA'>('MD');
   const [novoProjetoStatus, setNovoProjetoStatus] = useState<'NI' | 'EA' | 'C' | 'P'>('NI');
-  const [novoProjetoCategoria, setNovoProjetoCategoria] = useState<'DV' | 'MK' | 'OT'>('OT');
+  const [novoProjetoCategoria, setNovoProjetoCategoria] = useState<'DV' | 'MK' | 'OT' | 'CP'>('OT');
   const [novoProjetoResponsavel, setNovoProjetoResponsavel] = useState<number | undefined>(usuarios[0]?.id);
+  const [novoProjetoClienteId, setNovoProjetoClienteId] = useState<number | undefined>(undefined);
   const [novoProjetoUsuariosAnexados, setNovoProjetoUsuariosAnexados] = useState<number[]>([]);
   const [novoProjetoDescricao, setNovoProjetoDescricao] = useState('');
   const [novoProjetoDataInicio, setNovoProjetoDataInicio] = useState<string | null>(null);
@@ -94,10 +101,15 @@ const ProjetosPage: React.FC = () => {
   const [filterCategoria, setFilterCategoria] = useState<string | undefined>();
   const [filterNome, setFilterNome] = useState<string>('');
   const [filterResponsavel, setFilterResponsavel] = useState<number | undefined>();
+  const [filterClienteId, setFilterClienteId] = useState<number | undefined>();
   // Etapa Filters
   const [filterEtapaStatus, setFilterEtapaStatus] = useState<string | undefined>();
   const [filterEtapaNome, setFilterEtapaNome] = useState<string>('');
   const [filterEtapaProjetoId, setFilterEtapaProjetoId] = useState<number | undefined>();
+
+  const handleClienteSelect = (cliente: Cliente | null) => {
+    setNovoProjetoClienteId(cliente?.id || undefined);
+  };
 
   const handleAddProjeto = async () => {
     if (novoProjetoNome.trim()) {
@@ -109,6 +121,7 @@ const ProjetosPage: React.FC = () => {
           status: novoProjetoStatus,
           categoria: novoProjetoCategoria,
           responsavel_id: novoProjetoResponsavel || 1,
+          cliente_id: novoProjetoClienteId,
           usuarios_anexados: novoProjetoUsuariosAnexados,
           descricao: novoProjetoDescricao,
           data_inicio: novoProjetoDataInicio,
@@ -122,6 +135,7 @@ const ProjetosPage: React.FC = () => {
         setNovoProjetoStatus('NI');
         setNovoProjetoCategoria('OT');
         setNovoProjetoResponsavel(usuarios[0]?.id);
+        setNovoProjetoClienteId(undefined);
         setNovoProjetoUsuariosAnexados([]);
         setNovoProjetoDescricao('');
         setNovoProjetoDataInicio(null);
@@ -187,7 +201,8 @@ const ProjetosPage: React.FC = () => {
     (!filterStatus || p.status === filterStatus) &&
     (!filterCategoria || p.categoria === filterCategoria) &&
     (!filterNome || p.nome.toLowerCase().includes(filterNome.toLowerCase())) &&
-    (!filterResponsavel || p.responsavel_id === filterResponsavel)
+    (!filterResponsavel || p.responsavel_id === filterResponsavel) &&
+    (!filterClienteId || p.cliente_id === filterClienteId)
   );
   // Etapa filtering: join etapas with projeto info
   const allEtapas = etapas.map(etapa => {
@@ -246,102 +261,270 @@ const ProjetosPage: React.FC = () => {
 
       {/* Modal for creating Projeto */}
       <Modal
-        title="Novo Projeto"
+        title={
+          <div className="flex items-center space-x-2">
+            <FolderOpenOutlined style={{ color: '#1890ff' }} />
+            <span className="text-lg font-semibold">Criar Novo Projeto</span>
+          </div>
+        }
         open={showProjetoModal}
-        onCancel={() => setShowProjetoModal(false)}
+        onCancel={() => {
+          setShowProjetoModal(false);
+          // Reset form on cancel
+          setNovoProjetoNome('');
+          setNovoProjetoPrioridade('MD');
+          setNovoProjetoStatus('NI');
+          setNovoProjetoCategoria('OT');
+          setNovoProjetoResponsavel(usuarios[0]?.id);
+          setNovoProjetoClienteId(undefined);
+          setNovoProjetoUsuariosAnexados([]);
+          setNovoProjetoDescricao('');
+          setNovoProjetoDataInicio(null);
+          setNovoProjetoDataPrazo(null);
+          setNovoProjetoDataFim(null);
+        }}
         onOk={handleAddProjeto}
-        okText="Criar"
+        okText="Criar Projeto"
         cancelText="Cancelar"
+        width={800}
+        style={{ top: 20 }}
+        okButtonProps={{ 
+          size: 'large',
+          disabled: !novoProjetoNome.trim() || !novoProjetoResponsavel
+        }}
+        cancelButtonProps={{ size: 'large' }}
       >
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          <Input
-            value={novoProjetoNome}
-            onChange={e => setNovoProjetoNome(e.target.value)}
-            placeholder="Nome do projeto"
-            onPressEnter={handleAddProjeto}
-          />
-          <Select
-            value={novoProjetoPrioridade}
-            onChange={setNovoProjetoPrioridade}
-            options={[
-              { value: 'UT', label: 'Urgente' },
-              { value: 'AL', label: 'Alta' },
-              { value: 'MD', label: 'Média' },
-              { value: 'BA', label: 'Baixa' },
-            ]}
-            style={{ width: '100%' }}
-            placeholder="Prioridade"
-          />
-          <Select
-            value={novoProjetoStatus}
-            onChange={setNovoProjetoStatus}
-            options={[
-              { value: 'NI', label: 'Não Iniciado' },
-              { value: 'EA', label: 'Em Andamento' },
-              { value: 'C', label: 'Concluído' },
-              { value: 'P', label: 'Pausado' },
-            ]}
-            style={{ width: '100%' }}
-            placeholder="Status"
-          />
-          <Select
-            value={novoProjetoCategoria}
-            onChange={setNovoProjetoCategoria}
-            options={[
-              { value: 'DV', label: 'Desenvolvimento' },
-              { value: 'MK', label: 'Marketing' },
-              { value: 'OT', label: 'Outros' },
-            ]}
-            style={{ width: '100%' }}
-            placeholder="Categoria"
-          />
-          <Select
-            value={novoProjetoResponsavel}
-            onChange={setNovoProjetoResponsavel}
-            options={usuarios.map(u => ({ value: u.id, label: u.nome }))}
-            style={{ width: '100%' }}
-            placeholder="Responsável"
-            allowClear
-          />
-          <Select
-            mode="multiple"
-            value={novoProjetoUsuariosAnexados}
-            onChange={setNovoProjetoUsuariosAnexados}
-            options={usuarios.map(u => ({ value: u.id, label: u.nome }))}
-            style={{ width: '100%' }}
-            placeholder="Usuários Anexados"
-            allowClear
-          />
-          <Input.TextArea
-            value={novoProjetoDescricao}
-            onChange={e => setNovoProjetoDescricao(e.target.value)}
-            placeholder="Descrição"
-            rows={2}
-          />
-          <Space>
-            <Input
-              value={novoProjetoDataInicio || ''}
-              onChange={e => setNovoProjetoDataInicio(e.target.value || null)}
-              type="date"
-              style={{ width: 150 }}
-              placeholder="Data início"
-            />
-            <Input
-              value={novoProjetoDataPrazo || ''}
-              onChange={e => setNovoProjetoDataPrazo(e.target.value || null)}
-              type="date"
-              style={{ width: 150 }}
-              placeholder="Prazo"
-            />
-            <Input
-              value={novoProjetoDataFim || ''}
-              onChange={e => setNovoProjetoDataFim(e.target.value || null)}
-              type="date"
-              style={{ width: 150 }}
-              placeholder="Data fim"
-            />
-          </Space>
-        </Space>
+        <div className="space-y-6 py-4">
+          {/* Basic Information Section */}
+          <div>
+            <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
+              Informações Básicas
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome do Projeto <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={novoProjetoNome}
+                  onChange={e => setNovoProjetoNome(e.target.value)}
+                  placeholder="Digite o nome do projeto..."
+                  size="large"
+                  onPressEnter={handleAddProjeto}
+                  status={!novoProjetoNome.trim() ? 'error' : ''}
+                />
+                {!novoProjetoNome.trim() && (
+                  <span className="text-xs text-red-500 mt-1">O nome do projeto é obrigatório</span>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Categoria
+                </label>
+                <Select
+                  value={novoProjetoCategoria}
+                  onChange={setNovoProjetoCategoria}
+                  size="large"
+                  style={{ width: '100%' }}
+                  options={[
+                    { value: 'DV', label: '💻 Desenvolvimento' },
+                    { value: 'MK', label: '📈 Marketing' },
+                    { value: 'CP', label: '💰 Compensação' },
+                    { value: 'OT', label: '📋 Outros' },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prioridade
+                </label>
+                <Select
+                  value={novoProjetoPrioridade}
+                  onChange={setNovoProjetoPrioridade}
+                  size="large"
+                  style={{ width: '100%' }}
+                  options={[
+                    { value: 'UT', label: '🔴 Urgente' },
+                    { value: 'AL', label: '🟠 Alta' },
+                    { value: 'MD', label: '🟡 Média' },
+                    { value: 'BA', label: '🟢 Baixa' },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status Inicial
+                </label>
+                <Select
+                  value={novoProjetoStatus}
+                  onChange={setNovoProjetoStatus}
+                  size="large"
+                  style={{ width: '100%' }}
+                  options={[
+                    { value: 'NI', label: '⏸️ Não Iniciado' },
+                    { value: 'EA', label: '▶️ Em Andamento' },
+                    { value: 'C', label: '✅ Concluído' },
+                    { value: 'P', label: '⏸️ Pausado' },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Responsável <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={novoProjetoResponsavel}
+                  onChange={setNovoProjetoResponsavel}
+                  size="large"
+                  style={{ width: '100%' }}
+                  placeholder="Selecione o responsável"
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={usuarios.map(u => ({ 
+                    value: u.id, 
+                    label: `👤 ${u.nome}` 
+                  }))}
+                  status={!novoProjetoResponsavel ? 'error' : ''}
+                />
+                {!novoProjetoResponsavel && (
+                  <span className="text-xs text-red-500 mt-1">Selecione um responsável</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Client and Team Section */}
+          <div>
+            <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
+              Cliente e Equipe
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cliente (opcional)
+                </label>
+                <ClienteSelector
+                  onClientSelect={handleClienteSelect}
+                  selectedClient={novoProjetoClienteId ? { id: novoProjetoClienteId } as Cliente : null}
+                  placeholder="Selecione um cliente..."
+                />
+                <span className="text-xs text-gray-500 mt-1">
+                  Necessário para projetos de compensação
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Usuários da Equipe
+                </label>
+                <Select
+                  mode="multiple"
+                  value={novoProjetoUsuariosAnexados}
+                  onChange={setNovoProjetoUsuariosAnexados}
+                  size="large"
+                  style={{ width: '100%' }}
+                  placeholder="Adicione membros da equipe..."
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={usuarios.map(u => ({ 
+                    value: u.id, 
+                    label: u.nome 
+                  }))}
+                  maxTagCount={3}
+                  maxTagTextLength={15}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline Section */}
+          <div>
+            <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
+              Cronograma
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  📅 Data de Início
+                </label>
+                <Input
+                  type="date"
+                  value={novoProjetoDataInicio || ''}
+                  onChange={e => setNovoProjetoDataInicio(e.target.value || null)}
+                  size="large"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ⏰ Prazo Final
+                </label>
+                <Input
+                  type="date"
+                  value={novoProjetoDataPrazo || ''}
+                  onChange={e => setNovoProjetoDataPrazo(e.target.value || null)}
+                  size="large"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  🏁 Data de Conclusão
+                </label>
+                <Input
+                  type="date"
+                  value={novoProjetoDataFim || ''}
+                  onChange={e => setNovoProjetoDataFim(e.target.value || null)}
+                  size="large"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Description Section */}
+          <div>
+            <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
+              Descrição
+            </h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descrição do Projeto
+              </label>
+              <Input.TextArea
+                value={novoProjetoDescricao}
+                onChange={e => setNovoProjetoDescricao(e.target.value)}
+                placeholder="Descreva os objetivos, escopo e detalhes importantes do projeto..."
+                rows={4}
+                showCount
+                maxLength={500}
+              />
+            </div>
+          </div>
+
+          {/* Quick Tips */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="text-blue-500 text-xl">💡</div>
+              <div>
+                <h4 className="text-sm font-semibold text-blue-800 mb-2">Dicas Rápidas:</h4>
+                <ul className="text-xs text-blue-700 space-y-1">
+                  <li>• Projetos de <strong>Compensação</strong> requerem um cliente associado</li>
+                  <li>• Use nomes descritivos para facilitar a identificação</li>
+                  <li>• A equipe pode ser modificada posteriormente no detalhamento do projeto</li>
+                  <li>• Defina prazos realistas considerando a complexidade do projeto</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </Modal>
 
         {/* Filters */}
@@ -371,9 +554,8 @@ const ProjetosPage: React.FC = () => {
               className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Categoria</option>
-              <option value="DV">Desenvolvimento</option>
-              <option value="MK">Marketing</option>
               <option value="OT">Outros</option>
+              <option value="CP">Compensação</option>
             </select>
             <select
               value={filterResponsavel || ''}
@@ -383,6 +565,16 @@ const ProjetosPage: React.FC = () => {
               <option value="">Responsável</option>
               {usuarios.map(u => (
                 <option key={u.id} value={u.id}>{u.nome}</option>
+              ))}
+            </select>
+            <select
+              value={filterClienteId || ''}
+              onChange={e => setFilterClienteId(e.target.value ? Number(e.target.value) : undefined)}
+              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Cliente</option>
+              {clientes.map(c => (
+                <option key={c.id} value={c.id}>{c.razao_social}</option>
               ))}
             </select>
           </div>
@@ -478,6 +670,7 @@ const ProjetosPage: React.FC = () => {
         open={!!detailModalProjeto}
         onClose={() => setDetailModalProjeto(null)}
         loading={loading}
+        canAddCredito={true}
         onAddEtapa={async (newEtapa: Partial<Etapa>) => {
           if (!newEtapa.nome || !newEtapa.projeto_id) {
             message.error('O nome e o projeto são obrigatórios!');

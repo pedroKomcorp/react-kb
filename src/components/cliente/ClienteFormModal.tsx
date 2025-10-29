@@ -7,9 +7,7 @@ import {
   Tabs, 
   Row, 
   Col, 
-  Space, 
   Button, 
-   
   message,
 } from 'antd';
 import { 
@@ -74,8 +72,6 @@ const ClienteFormModal: React.FC<ClienteFormModalProps> = ({
     }, [visible, mode, cliente, form]);
 
   const handleSubmit = async (values: Record<string, unknown>) => {
-    console.log('Form submitted with values:', values);
-    console.log('Mode:', mode, 'Cliente:', cliente);
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -154,16 +150,24 @@ const ClienteFormModal: React.FC<ClienteFormModalProps> = ({
   return (
     <Modal
       title={
-        <Space>
-          <UserOutlined />
-          {mode === 'edit' ? 'Editar Cliente' : 'Novo Cliente'}
-        </Space>
+        <div className="flex items-center space-x-3">
+          <UserOutlined style={{ color: '#1890ff', fontSize: '20px' }} />
+          <span className="text-xl font-semibold">
+            {mode === 'edit' ? 'Editar Cliente' : 'Criar Novo Cliente'}
+          </span>
+        </div>
       }
       open={visible}
       onCancel={onClose}
-      width={800}
+      width={900}
+      style={{ top: 20 }}
       footer={[
-        <Button key="cancel" onClick={onClose} disabled={loading}>
+        <Button 
+          key="cancel" 
+          onClick={onClose} 
+          disabled={loading}
+          size="large"
+        >
           Cancelar
         </Button>,
         <Button 
@@ -171,8 +175,9 @@ const ClienteFormModal: React.FC<ClienteFormModalProps> = ({
           type="primary" 
           loading={loading}
           onClick={() => form.submit()}
+          size="large"
         >
-          {mode === 'edit' ? 'Atualizar' : 'Criar'} Cliente
+          {mode === 'edit' ? '💾 Atualizar' : '✨ Criar'} Cliente
         </Button>
       ]}
     >
@@ -181,62 +186,109 @@ const ClienteFormModal: React.FC<ClienteFormModalProps> = ({
         layout="vertical"
         onFinish={handleSubmit}
         scrollToFirstError
+        size="large"
       >
-        <Tabs defaultActiveKey="1" type="card">
+        <Tabs 
+          defaultActiveKey="1" 
+          type="card"
+          className="mb-4"
+        >
           {/* Dados Básicos */}
-          <TabPane className='' 
-            tab={<span className='space-x-1'>
-                <UserOutlined />Dados Básicos
-              </span>} 
+          <TabPane 
+            tab={
+              <span className="flex items-center space-x-2 px-2">
+                <UserOutlined />
+                <span>Dados Básicos</span>
+              </span>
+            } 
             key="1"
           >
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="razao_social"
-                  label="Razão Social"
-                  rules={[{ required: true, message: 'Razão social é obrigatória' }]}
-                >
-                  <Input placeholder="Razão social da empresa" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="nome_fantasia"
-                  label="Nome Fantasia"
-                >
-                  <Input placeholder="Nome fantasia" />
-                </Form.Item>
-              </Col>
-            </Row>
+            <div className="space-y-6">
+              {/* Company Info Section */}
+              <div>
+                <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
+                  Informações da Empresa
+                </h3>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="razao_social"
+                      label={
+                        <span className="text-sm font-medium text-gray-700">
+                          Razão Social <span className="text-red-500">*</span>
+                        </span>
+                      }
+                      rules={[{ required: true, message: 'Razão social é obrigatória' }]}
+                    >
+                      <Input 
+                        placeholder="Digite a razão social da empresa..." 
+                        prefix={<UserOutlined className="text-gray-400" />}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="nome_fantasia"
+                      label={
+                        <span className="text-sm font-medium text-gray-700">
+                          Nome Fantasia
+                        </span>
+                      }
+                    >
+                      <Input placeholder="Nome fantasia (se diferente)" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </div>
 
-    
+              {/* Tax Info Section */}
+              <div>
+                <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
+                  Informações Fiscais
+                </h3>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="inscricao_estadual"
+                      label={
+                        <span className="text-sm font-medium text-gray-700">
+                          Inscrição Estadual
+                        </span>
+                      }
+                    >
+                      <Input placeholder="Número da inscrição estadual" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="inscricao_municipal"
+                      label={
+                        <span className="text-sm font-medium text-gray-700">
+                          Inscrição Municipal
+                        </span>
+                      }
+                    >
+                      <Input placeholder="Número da inscrição municipal" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </div>
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="inscricao_estadual"
-                  label="Inscrição Estadual"
-                >
-                  <Input placeholder="Inscrição estadual" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="inscricao_municipal"
-                  label="Inscrição Municipal"
-                >
-                  <Input placeholder="Inscrição municipal" />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="contato"
-                  label="Pessoa de Contato"
-                >
+              {/* Contact Info Section */}
+              <div>
+                <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
+                  Informações de Contato
+                </h3>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="contato"
+                      label={
+                        <span className="text-sm font-medium text-gray-700">
+                          Pessoa de Contato
+                        </span>
+                      }
+                    >
                   <Input placeholder="Nome do contato" />
                 </Form.Item>
               </Col>
@@ -276,10 +328,10 @@ const ClienteFormModal: React.FC<ClienteFormModalProps> = ({
                   <Input placeholder="cliente@email.com" />
                 </Form.Item>
               </Col>
-            </Row>
-          </TabPane>
-
-          {/* Endereço */}
+                </Row>
+              </div>
+            </div>
+          </TabPane>          {/* Endereço */}
           <TabPane 
             tab={<span><HomeOutlined />Endereço</span>} 
             key="2"

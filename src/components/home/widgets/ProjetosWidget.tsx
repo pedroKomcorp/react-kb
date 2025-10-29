@@ -266,7 +266,7 @@ const ProjetosWidget: React.FC = () => {
 															projetosFiltrados.map(projeto => (
 																<div 
 																	key={projeto.id} 
-																	className="flex-shrink-0" 
+																	className="flex-shrink-0 pl-6 pr-6" 
 																	style={{ 
 																		width: `${cardWidth}px`,
 																		minWidth: `${cardWidth}px`,
@@ -326,6 +326,7 @@ const ProjetosWidget: React.FC = () => {
 					canEditProjeto={false}
 					canEditEtapa={false}
 					canAddEtapa={false}
+					canAddCredito={false}
 					onClose={() => setSelectedProjeto(null)}
 					onAddEtapa={() => {}}
 					onSelectEtapa={(etapa) => setSelectedEtapa(etapa)}

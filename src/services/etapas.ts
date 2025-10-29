@@ -1,10 +1,6 @@
 import api from './api';
 import type { Etapa } from '../types/etapa';
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+import { getAuthHeaders } from './utils';
 
 export const getEtapas = async () => {
   const res = await api.get<{ etapas: Etapa[] }>('/etapas/', {

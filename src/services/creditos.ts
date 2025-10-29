@@ -9,13 +9,17 @@ import type {
   CreditoFilters,
   CreditoListResponse,
   ClienteCreditosResponse,
-  MovimentacoesResponse
 } from '../types/credito';
+import { authHeaders, getAuthToken, handleServiceError } from './utils';
 
-// Helper to add token to headers
-const authHeaders = (token: string) => ({
-  headers: { Authorization: `Bearer ${token}` },
-});
+// Re-export utility functions for backward compatibility
+export { 
+  formatCurrency, 
+  formatDate, 
+  getCreditoStatusColor as getStatusColor,
+  getTipoMovimentacaoColor,
+  getTipoMovimentacaoLabel
+} from './utils';
 
 // ========== CREDITOS CRUD ==========
 
@@ -43,54 +47,37 @@ export const getCredito = async (creditoId: number, token?: string) => {
 };
 
 export const getCreditosCliente = async (clienteId: number, token?: string) => {
-  const authToken = token || localStorage.getItem('token');
-  
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
-  }
   try {
+    const authToken = getAuthToken(token);
     const res = await api.get<ClienteCreditosResponse>(
       `/creditos/cliente/${clienteId}`,
-    authHeaders(authToken)
+      authHeaders(authToken)
     );
-    
     
     // The API returns { creditos: Credito[] }, so we extract the array
     if (res.data && 'creditos' in res.data) {
-      const creditos = res.data.creditos;
-      return creditos;
+      return res.data.creditos;
     }
     
     // Fallback in case structure is different
     return [];
   } catch (error) {
-    console.error('=== Error in getCreditosCliente ===');
-    console.error('Full error object:', error);
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-    }
-    if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { data?: unknown; status?: number; statusText?: string } };
-      console.error('Error response data:', axiosError.response?.data);
-      console.error('Error status:', axiosError.response?.status);
-      console.error('Error status text:', axiosError.response?.statusText);
-    }
-    throw error; // Re-throw to let the component handle it
+    handleServiceError(error, 'busca de créditos do cliente');
   }
 };
 
 export const createCredito = async (data: CreateCreditoData, token?: string) => {
-  const authToken = token || localStorage.getItem('token');
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
-  } 
-  const res = await api.post<Credito>(
-    '/creditos/',
-    data,
-    authHeaders(authToken)
-  );
-  
-   return res.data;
+  try {
+    const authToken = getAuthToken(token);
+    const res = await api.post<Credito>(
+      '/creditos/',
+      data,
+      authHeaders(authToken)
+    );
+    return res.data;
+  } catch (error) {
+    handleServiceError(error, 'criação do crédito');
+  }
 };
 
 export const updateCredito = async (
@@ -98,79 +85,50 @@ export const updateCredito = async (
   data: UpdateCreditoData,
   token?: string
 ) => {
-  const authToken = token || localStorage.getItem('token');
-  
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
+  try {
+    const authToken = getAuthToken(token);
+    const res = await api.put<Credito>(
+      `/creditos/${creditoId}`,
+      data,
+      authHeaders(authToken)
+    );
+    return res.data;
+  } catch (error) {
+    handleServiceError(error, 'atualização do crédito');
   }
-
-  const res = await api.put<Credito>(
-    `/creditos/${creditoId}`,
-    data,
-    authHeaders(authToken)
-  );
-  return res.data;
 };
 
 export const deleteCredito = async (creditoId: number, token?: string) => {
-  const authToken = token || localStorage.getItem('token');
-  
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
+  try {
+    const authToken = getAuthToken(token);
+    const res = await api.delete<{ message: string }>(
+      `/creditos/${creditoId}`,
+      authHeaders(authToken)
+    );
+    return res.data;
+  } catch (error) {
+    handleServiceError(error, 'exclusão do crédito');
   }
-  const res = await api.delete<{ message: string }>(
-    `/creditos/${creditoId}`,
-    authHeaders(authToken)
-  );
-  return res.data;
 };
 
 // ========== MOVIMENTACOES CRUD ==========
-
-export const getMovimentacoes = async (creditoId: number, token?: string): Promise<MovimentacaoCredito[]> => {
-  
-  const authToken = token || localStorage.getItem('token');
-  
-  if (!authToken) {
-    console.error('❌ Token de autenticação não encontrado');
-    throw new Error('Token de autenticação não encontrado');
-  }
-  
-  try {
-    const res = await api.get<MovimentacoesResponse>(
-      `/creditos/${creditoId}/movimentacoes`,
-      authHeaders(authToken)
-    );
-    
-    
-    // A API retorna { "movimentacoes": [...] }, então extraímos o array
-    const movimentacoes = Array.isArray(res.data.movimentacoes) ? res.data.movimentacoes : [];
-    return movimentacoes;
-    
-  } catch (error) {
-    console.error('❌ Error loading movimentacoes:', error);
-    // Retornar array vazio em caso de erro para evitar problemas com .map()
-    return [];
-  }
-};
 
 export const createMovimentacao = async (
   creditoId: number,
   data: CreateMovimentacaoData,
   token?: string
 ) => {
-  const authToken = token || localStorage.getItem('token');
-  
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
+  try {
+    const authToken = getAuthToken(token);
+    const res = await api.post<MovimentacaoCredito>(
+      `/creditos/${creditoId}/movimentacoes`,
+      data,
+      authHeaders(authToken)
+    );
+    return res.data;
+  } catch (error) {
+    handleServiceError(error, 'criação da movimentação');
   }
-
-  const res = await api.post<MovimentacaoCredito>(
-    `/creditos/${creditoId}/movimentacoes`,
-    data,
-    authHeaders(authToken)
-  );
-  return res.data;
 };
 
 export const updateMovimentacao = async (
@@ -179,18 +137,17 @@ export const updateMovimentacao = async (
   data: UpdateMovimentacaoData,
   token?: string
 ) => {
-  const authToken = token || localStorage.getItem('token');
-  
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
+  try {
+    const authToken = getAuthToken(token);
+    const res = await api.put<MovimentacaoCredito>(
+      `/creditos/${creditoId}/movimentacoes/${movimentacaoId}`,
+      data,
+      authHeaders(authToken)
+    );
+    return res.data;
+  } catch (error) {
+    handleServiceError(error, 'atualização da movimentação');
   }
-
-  const res = await api.put<MovimentacaoCredito>(
-    `/creditos/${creditoId}/movimentacoes/${movimentacaoId}`,
-    data,
-    authHeaders(authToken)
-  );
-  return res.data;
 };
 
 export const deleteMovimentacao = async (
@@ -198,59 +155,16 @@ export const deleteMovimentacao = async (
   movimentacaoId: number,
   token?: string
 ) => {
-  const authToken = token || localStorage.getItem('token');
-  
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
-  }
-
-  const res = await api.delete<{ message: string }>(
-    `/creditos/${creditoId}/movimentacoes/${movimentacaoId}`,
-    authHeaders(authToken)
-  );
-  return res.data;
-};
-
-// ========== UTILITY FUNCTIONS ==========
-
-export const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
-};
-
-export const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('pt-BR');
-};
-
-export const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'ATIVO': return 'green';
-    case 'QUITADO': return 'blue';
-    case 'CANCELADO': return 'red';
-    default: return 'default';
+  try {
+    const authToken = getAuthToken(token);
+    const res = await api.delete<{ message: string }>(
+      `/creditos/${creditoId}/movimentacoes/${movimentacaoId}`,
+      authHeaders(authToken)
+    );
+    return res.data;
+  } catch (error) {
+    handleServiceError(error, 'exclusão da movimentação');
   }
 };
 
-export const getTipoMovimentacaoColor = (tipo: string) => {
-  switch (tipo) {
-    case 'COMPENSACAO': return 'red';
-    case 'ATUALIZACAO_SELIC': return 'orange';
-    case 'CALCULO_MENSAL': return 'yellow';
-    case 'DESCONTO': return 'green';
-    case 'AJUSTE_MANUAL': return 'purple';
-    default: return 'default';
-  }
-};
-
-export const getTipoMovimentacaoLabel = (tipo: string) => {
-  switch (tipo) {
-    case 'COMPENSACAO': return 'Compensação';
-    case 'ATUALIZACAO_SELIC': return 'Atualização SELIC';
-    case 'CALCULO_MENSAL': return 'Cálculo Mensal';
-    case 'DESCONTO': return 'Desconto';
-    case 'AJUSTE_MANUAL': return 'Ajuste Manual';
-    default: return tipo;
-  }
-};
+// Utility functions now imported from './utils'

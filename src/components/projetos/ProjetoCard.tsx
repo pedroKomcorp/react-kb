@@ -38,13 +38,18 @@ const ProjetoCard: React.FC<ProjetoCardProps> = ({ projeto, usuarios, onClick, o
   <Card
     className="rounded-lg shadow  bg-white w-full transition-all duration-200 cursor-pointer hover:border-blue-400 border border-gray-200 p-2"
     onClick={onClick}
+    headStyle={{ 
+      overflow: 'visible',
+      whiteSpace: 'normal',
+      wordWrap: 'break-word'
+    }}
     title={
-      <div className="flex flex-col gap-0.5 md:flex-row md:items-center md:justify-between min-h-0">
-        <div className="flex items-center gap-1">
-          <FolderOpenOutlined className="text-blue-500 text-base" />
-          <span className="font-semibold text-sm md:text-base leading-tight">{projeto.nome}</span>
+      <div className="flex flex-col gap-0.5 md:flex-row md:items-start md:justify-between min-h-0">
+        <div className="flex items-start gap-1 flex-1 min-w-0 max-w-full">
+          <FolderOpenOutlined className="text-blue-500 text-base flex-shrink-0 mt-0.5" />
+          <span className="font-semibold text-sm md:text-base leading-tight break-all whitespace-normal">{projeto.nome}</span>
         </div>
-        <Space size={2} className="mt-1 md:mt-0">
+        <Space size={2} className="mt-1 md:mt-0 flex-shrink-0">
           {showStatus ? (
             <Tooltip title="Status do Projeto">
               <Tag color={statusMap[projeto.status]?.color || 'default'}>{statusMap[projeto.status]?.label || projeto.status}</Tag>

@@ -128,7 +128,7 @@ const MainLayout: React.FC = () => {
     }
   };
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', height: '100vh', width: '100vw' }}>
+    <div style={{display: 'flex', flexDirection: 'row', height: '100vh', width: '100vw' }}>
       <Sidebar />
       <main style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <Header 

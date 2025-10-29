@@ -88,11 +88,9 @@ const ClientesPage: React.FC = () => {
   }, [fetchClientes]);
 
   const handleEdit = useCallback((cliente: Cliente) => {
-    console.log('Edit button clicked for cliente:', cliente);
     setEditingCliente(cliente);
     setModalMode('edit');
     setShowModal(true);
-    console.log('Modal should be open now. showModal:', true, 'mode:', 'edit');
   }, []);
 
   const handleAdd = useCallback(() => {
@@ -101,8 +99,7 @@ const ClientesPage: React.FC = () => {
     setShowModal(true);
   }, []);
 
-  const handleModalSuccess = useCallback((cliente: Cliente) => {
-    console.log('Modal success called with cliente:', cliente);
+  const handleModalSuccess = useCallback(() => {
     fetchClientes();
     setShowModal(false);
     setEditingCliente(null);
@@ -155,14 +152,12 @@ const ClientesPage: React.FC = () => {
         key: 'acoes',
         width: mobile ? 100 : 150,
         render: (record: Cliente) => {
-          console.log('Rendering actions for record:', record.id);
           return (
           <Space size={mobile ? "small" : "middle"}>
             <Button 
               size="small" 
               icon={<EditOutlined />} 
               onClick={() => {
-                console.log('Edit button clicked for record:', record);
                 handleEdit(record);
               }}
             >

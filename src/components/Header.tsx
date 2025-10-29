@@ -193,12 +193,7 @@ const Header: React.FC<Header> = ({
               title={loadError || displayName}
             >
               {displayName}
-            </span>
-            {!isLoading && !loadError && currentUser?.email && (
-              <span className="text-white/70 text-xs truncate" style={{ maxWidth: '150px' }}>
-                {currentUser.email}
-              </span>
-            )}
+            </span>      
             {loadError && (
               <span className="text-red-300 text-xs truncate" style={{ maxWidth: '150px' }}>
                 {loadError}

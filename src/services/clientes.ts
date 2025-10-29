@@ -1,24 +1,6 @@
 import api from './api';
 import type { Cliente, DadosBancarios, EnderecoEntrega, TagCliente, SimNaoEnum } from '../types/cliente';
-
-// Helper to add token to headers
-const authHeaders = (token: string) => ({
-  headers: { Authorization: `Bearer ${token}` },
-});
-
-// Helper to safely get string value with fallback
-const safeString = (value: unknown, fallback: string = ''): string => {
-  if (value === null || value === undefined) return fallback;
-  return String(value);
-};
-
-// Helper to safely get enum value
-const safeEnum = <T extends string>(value: unknown, validValues: T[], fallback: T): T => {
-  if (value && typeof value === 'string' && validValues.includes(value as T)) {
-    return value as T;
-  }
-  return fallback;
-};
+import { authHeaders, safeString, safeEnum, getAuthToken } from './utils';
 
 // Helper to normalize cliente data based on backend model structure
 const normalizeCliente = (cliente: unknown): Cliente => {
@@ -167,23 +149,16 @@ export const updateCliente = async (
   cliente: Partial<Omit<Cliente, 'id'>>,
   token?: string
 ): Promise<Cliente> => {
-  const authToken = token || localStorage.getItem('token');
+  const authToken = getAuthToken(token);
+  const backendData = prepareClienteForBackend(cliente);
   
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
-  }
-
   try {
-    const backendData = prepareClienteForBackend(cliente);
-    console.log('Updating cliente with ID:', id, 'data:', backendData);
-    
     const res = await api.put<unknown>(
       `/clientes/${id}`,
       backendData,
       authHeaders(authToken)
     );
     
-    console.log('Update response:', res);
     return normalizeCliente(res.data);
   } catch (error) {
     console.error('Error updating cliente:', error);
@@ -192,12 +167,7 @@ export const updateCliente = async (
 };
 
 export const deleteCliente = async (id: number, token?: string) => {
-  const authToken = token || localStorage.getItem('token');
-  
-  if (!authToken) {
-    throw new Error('Token de autenticação não encontrado');
-  }
-  
+  const authToken = getAuthToken(token);
   const res = await api.delete<{ message: string }>(
     `/clientes/${id}`,
     authHeaders(authToken)
