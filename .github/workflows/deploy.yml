@@ -22,3 +22,31 @@ jobs:
             cd /var/www/react-kb
             git fetch origin prod
             git reset --hard origin/prod
+            name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - prod  # change if you use another branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /var/www/react-kb
+            git fetch origin prod
+            git reset --hard origin/prod
+            npm install
+            npm run build
+            sudo systemctl reload nginx
