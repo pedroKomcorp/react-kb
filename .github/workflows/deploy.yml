@@ -1,5 +1,3 @@
-name: Deploy to VPS
-
 on:
   push:
     branches:
@@ -19,6 +17,8 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.key_passphrase }}
+          tty: true
           script: |
             cd /var/www/react-kb
             git fetch origin prod
@@ -26,3 +26,5 @@ jobs:
             npm install
             npm run build
             sudo systemctl reload nginx
+
+            
