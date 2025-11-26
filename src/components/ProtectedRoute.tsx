@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router';
 import { useAuth } from '../hooks/UseAuth';
-import { API_BASE_URL } from '../services/api';
+import API_BASE_URL from '../services/api';
 
 const ProtectedRoute: React.FC = () => {
   const { token, logout } = useAuth();
