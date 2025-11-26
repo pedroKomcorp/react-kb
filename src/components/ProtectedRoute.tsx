@@ -64,4 +64,4 @@ const ProtectedRoute: React.FC = () => {
     };
 
     validateToken();
-  }, [token]()
+}, [token]);
