@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { getEtapas, updateEtapa } from '../../../services/etapas';
-import { getProjetos } from '../../../services/projetos';
-import type { Etapa, StatusEtapaEnum } from '../../../types/etapa';
-import EtapaDetailModal from '../../../components/projetos/EtapaDetailModal';
-import KanbanView from '../../../components/operacional/demandas/KanbanView';
-import CalendarView, { type CalendarViewRef } from '../../../components/operacional/demandas/CalendarView';
-
-// Define the extended etapa type that matches EtapaDetailModal's EtapaWithProjeto
-type EtapaWithProjeto = Etapa & { projetoNome: string; projetoId: number };
+import { getProjetos, updateProjeto } from '../../../services/projetos';
+import { getUsuarios } from '../../../services/usuarios';
+import type { Projeto } from '../../../types/projeto';
+import type { Usuario } from '../../../types/usuario';
+import type { Etapa } from '../../../types/etapa';
+import { createEtapa, updateEtapa, deleteEtapa } from '../../../services/etapas';
+import ProjetoDetailModal from '../../../components/projetos/ProjetoDetailModal';
+import ProjetoKanbanView from '../../../components/operacional/demandas/ProjetoKanbanView';
+import ProjetoCalendarView, { type ProjetoCalendarViewRef } from '../../../components/operacional/demandas/ProjetoCalendarView';
 
 export const DemandasPage: React.FC = () => {
-  const [etapas, setEtapas] = useState<EtapaWithProjeto[]>([]);
-  const [selectedEtapa, setSelectedEtapa] = useState<EtapaWithProjeto | null>(null);
+  const [projetos, setProjetos] = useState<Projeto[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [selectedProjeto, setSelectedProjeto] = useState<Projeto | null>(null);
   const [leftWidth, setLeftWidth] = useState(50); // Percentage width for left panel (Kanban)
   const [isDragging, setIsDragging] = useState(false);
-  const calendarRef = useRef<CalendarViewRef>(null);
+  const calendarRef = useRef<ProjetoCalendarViewRef>(null);
   
   // Get current month start and end dates
   const getCurrentMonthRange = () => {
@@ -66,53 +67,104 @@ export const DemandasPage: React.FC = () => {
   };
 
   const fetchData = useCallback(async () => {
-    const [etapasData, projetosResponse] = await Promise.all([getEtapas(), getProjetos()]);
-
-    const projetosMap = new Map(projetosResponse.projetos.map(p => [p.id, p.nome]));
-
-    const etapasWithProjectName = etapasData.map(e => ({
-      ...e,
-      projetoNome: projetosMap.get(e.projeto_id) || 'Projeto Desconhecido',
-      projetoId: e.projeto_id
-    }));
+    const [projetosResponse, usuariosData] = await Promise.all([
+      getProjetos(),
+      getUsuarios()
+    ]);
     
-    setEtapas(etapasWithProjectName);
+    setProjetos(projetosResponse.projetos);
+    setUsuarios(usuariosData);
   }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleUpdateEtapaStatus = async (etapaId: number, newStatus: StatusEtapaEnum) => {
-    const etapa = etapas.find(e => e.id === etapaId);
-    if (etapa) {
+  const handleUpdateProjetoStatus = async (projetoId: number, newStatus: 'NI' | 'EA' | 'C' | 'P') => {
+    const projeto = projetos.find(p => p.id === projetoId);
+    if (projeto) {
       try {
-        const updatedEtapa = await updateEtapa(etapaId, { status: newStatus });
-        // Update the state with the server's response
-        setEtapas(prevEtapas => prevEtapas.map(e => (e.id === etapaId ? { ...e, ...updatedEtapa } : e)));
+        const updatedProjeto = await updateProjeto(projetoId, { status: newStatus });
+        setProjetos(prevProjetos => prevProjetos.map(p => (p.id === projetoId ? { ...p, ...updatedProjeto } : p)));
       } catch (error) {
-        console.error("Falha ao atualizar o status da etapa", error);
+        console.error("Falha ao atualizar o status do projeto", error);
       }
     }
   };
 
-  const handleSaveEtapa = async (updatedEtapa: Partial<Etapa> & { id: number }) => {
-     try {
-        const savedEtapa = await updateEtapa(updatedEtapa.id, updatedEtapa);
-        setEtapas(etapas.map(e => e.id === savedEtapa.id ? {...e, ...savedEtapa} : e));
-        setSelectedEtapa(null);
-     } catch (error) {
-        console.error("Falha ao salvar a etapa", error);
-     }
+  const handleUpdateProjeto = async (updatedProjeto: Partial<Projeto>) => {
+    if (!selectedProjeto) return;
+    try {
+      const savedProjeto = await updateProjeto(selectedProjeto.id, updatedProjeto);
+      setProjetos(projetos.map(p => p.id === savedProjeto.id ? { ...p, ...savedProjeto } : p));
+      setSelectedProjeto(prev => prev ? { ...prev, ...savedProjeto } : null);
+    } catch (error) {
+      console.error("Falha ao salvar o projeto", error);
+    }
   };
 
-  const filteredEtapas = etapas.filter(etapa => {
-    if (!etapa.data_inicio && !etapa.data_prazo) return true; 
-    const etapaDate = etapa.data_inicio || etapa.data_prazo;
-    if (!etapaDate) return true;
+  const handleAddEtapa = async (etapa: Partial<Etapa>) => {
+    if (!selectedProjeto) return;
+    try {
+      const newEtapa = await createEtapa({ ...etapa, projeto_id: selectedProjeto.id } as Omit<Etapa, 'id'>);
+      const updatedEtapas = [...(selectedProjeto.etapas || []), newEtapa];
+      setSelectedProjeto(prev => prev ? { ...prev, etapas: updatedEtapas } : null);
+      setProjetos(projetos.map(p => p.id === selectedProjeto.id ? { ...p, etapas: updatedEtapas } : p));
+    } catch (error) {
+      console.error("Falha ao criar etapa", error);
+    }
+  };
+
+  const handleUpdateEtapa = async (etapa: Partial<Etapa> & { id: number }) => {
+    try {
+      const savedEtapa = await updateEtapa(etapa.id, etapa);
+      if (selectedProjeto) {
+        const updatedEtapas = (selectedProjeto.etapas || []).map(e => 
+          e.id === savedEtapa.id ? { ...e, ...savedEtapa } : e
+        );
+        setSelectedProjeto(prev => prev ? { ...prev, etapas: updatedEtapas } : null);
+        setProjetos(projetos.map(p => p.id === selectedProjeto.id ? { ...p, etapas: updatedEtapas } : p));
+      }
+    } catch (error) {
+      console.error("Falha ao atualizar etapa", error);
+    }
+  };
+
+  const handleDeleteEtapa = async (etapaId: number) => {
+    try {
+      await deleteEtapa(etapaId);
+      if (selectedProjeto) {
+        const updatedEtapas = (selectedProjeto.etapas || []).filter(e => e.id !== etapaId);
+        setSelectedProjeto(prev => prev ? { ...prev, etapas: updatedEtapas } : null);
+        setProjetos(projetos.map(p => p.id === selectedProjeto.id ? { ...p, etapas: updatedEtapas } : p));
+      }
+    } catch (error) {
+      console.error("Falha ao deletar etapa", error);
+    }
+  };
+
+  const filteredProjetos = projetos.filter(projeto => {
+    // Projects without any dates should appear on all months in kanban
+    if (!projeto.data_inicio && !projeto.data_prazo) return true;
     
-    const etapaDateOnly = etapaDate.split('T')[0];
-    return etapaDateOnly >= dateFilter.start && etapaDateOnly <= dateFilter.end;
+    // Check if project falls within the date range
+    const startDate = projeto.data_inicio ? projeto.data_inicio.split('T')[0] : null;
+    const endDate = projeto.data_prazo ? projeto.data_prazo.split('T')[0] : null;
+    
+    // If project has a start date, check if it's within range or before the filter end
+    // If project has an end date, check if it's within range or after the filter start
+    if (startDate && endDate) {
+      // Project with both dates: show if date range overlaps with filter range
+      return startDate <= dateFilter.end && endDate >= dateFilter.start;
+    } else if (startDate) {
+      // Only start date: show if start is before or within the filter range
+      return startDate <= dateFilter.end;
+    } else if (endDate) {
+      // Only end date: show if end is after or within the filter range
+      return endDate >= dateFilter.start;
+    }
+    
+    return true;
   });
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -160,7 +212,7 @@ export const DemandasPage: React.FC = () => {
 
         {/* Page Title and Filter Controls */}
         <div className="bg-transparent rounded-lg  flex items-center justify-between flex-shrink-0">
-          <h1 className="text-2xl font-bold text-white">QUADRO DE DEMANDAS</h1>
+          <h1 className="text-2xl font-bold text-white">QUADRO DE PROJETOS</h1>
           <div className="flex items-center space-x-6">
             {/* Date Filter */}
             <div className="flex items-center space-x-4">
@@ -254,13 +306,13 @@ export const DemandasPage: React.FC = () => {
               className="flex flex-col h-full overflow-hidden mr-2"
               style={{ width: showCalendar ? `${leftWidth}%` : '100%' }}
             >
-              <KanbanView
-                etapas={filteredEtapas}
-                onEtapaClick={(etapa) => {
-                  const found = etapas.find(e => e.id === etapa.id);
-                  if (found) setSelectedEtapa(found);
+              <ProjetoKanbanView
+                projetos={filteredProjetos}
+                onProjetoClick={(projeto) => {
+                  const found = projetos.find(p => p.id === projeto.id);
+                  if (found) setSelectedProjeto(found);
                 }}
-                onUpdateEtapaStatus={handleUpdateEtapaStatus}
+                onUpdateProjetoStatus={handleUpdateProjetoStatus}
               />
             </div>
           )}
@@ -281,26 +333,30 @@ export const DemandasPage: React.FC = () => {
               className="flex flex-col h-full overflow-hidden ml-2"
               style={{ width: showKanban ? `${100 - leftWidth}%` : '100%' }}
             >
-              <CalendarView
+              <ProjetoCalendarView
                 ref={calendarRef}
-                etapas={filteredEtapas}
-                onEtapaClick={(etapa) => {
-                  const found = etapas.find(e => e.id === etapa.id);
-                  if (found) setSelectedEtapa(found);
+                projetos={filteredProjetos}
+                onProjetoClick={(projeto) => {
+                  const found = projetos.find(p => p.id === projeto.id);
+                  if (found) setSelectedProjeto(found);
                 }}
               />
             </div>
           )}
         </main>
 
-        <EtapaDetailModal
-          etapa={selectedEtapa}
-          open={!!selectedEtapa}
-          onClose={() => setSelectedEtapa(null)}
-          onUpdateEtapa={handleSaveEtapa}
+        <ProjetoDetailModal
+          projeto={selectedProjeto}
+          usuarios={usuarios}
+          open={!!selectedProjeto}
+          onClose={() => setSelectedProjeto(null)}
+          onAddEtapa={handleAddEtapa}
+          onSelectEtapa={() => {}}
+          onUpdateProjeto={handleUpdateProjeto}
+          onUpdateEtapa={handleUpdateEtapa}
+          onDeleteEtapa={handleDeleteEtapa}
         />
       </div>
     </div>
   );
 };
-

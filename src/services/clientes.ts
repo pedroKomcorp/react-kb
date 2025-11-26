@@ -65,12 +65,14 @@ const normalizeCliente = (cliente: unknown): Cliente => {
 };
 
 export const getClientes = async (token?: string): Promise<Cliente[]> => {
-
-  
   try {
+    // Fetch all clients by setting a high limit to overcome backend default of 100
     const res = await api.get<{ clientes: unknown[] }>(
       '/clientes/',
-      token ? authHeaders(token) : undefined
+      {
+        params: { limit: 1000 },
+        ...(token ? authHeaders(token) : {})
+      }
     );
     // Debug: log raw data to help identify issues
     

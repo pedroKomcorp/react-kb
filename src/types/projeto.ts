@@ -6,7 +6,7 @@ export type Projeto = {
   nome: string;
   prioridade: 'UT' | 'AL' | 'MD' | 'BA';
   status: 'NI' | 'EA' | 'C' | 'P';
-  categoria: 'DV' | 'MK' | 'OT' | 'CP';
+  categoria: 'CP' | 'RC' | 'AO' | 'AU' | 'CM' | 'PL' | 'CO' | 'ES' | 'RA' | 'ST' | 'OT';
   responsavel_id: number;
   cliente_id?: number | null;
   descricao?: string | null;
