@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router';
 import { useAuth } from '../hooks/UseAuth';
+import { API_BASE_URL } from '../services/api';
 
 const ProtectedRoute: React.FC = () => {
   const { token, logout } = useAuth();
@@ -17,7 +18,7 @@ const ProtectedRoute: React.FC = () => {
       }
       try {
         // Try a lightweight auth check endpoint
-        const res = await fetch('http://localhost:8000/auth/validate', {
+        const res = await fetch(`${API_BASE_URL}/auth/validate`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -26,7 +27,7 @@ const ProtectedRoute: React.FC = () => {
           const refreshToken = localStorage.getItem('refresh_token');
           if (refreshToken) {
             try {
-              const refreshRes = await fetch('http://localhost:8000/auth/refresh', {
+              const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh_token: refreshToken })
