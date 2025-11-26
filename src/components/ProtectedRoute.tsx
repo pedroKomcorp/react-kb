@@ -17,9 +17,13 @@ const ProtectedRoute: React.FC = () => {
       }
 
       try {
-        const res = await fetch(`${BASE_URL}auth/validate`, {
+
+        console.log("BASE_URL:", BASE_URL);
+
+        const res = await fetch(`${BASE_URL}/auth/validate`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
 
         const data = await res.json();
 
