@@ -138,9 +138,17 @@ const ProjetosWidget: React.FC = () => {
 		];
 		const categoriaOptions = [
 			{ value: '', label: 'Todas' },
-			{ value: 'DV', label: 'Desenvolvimento' },
-			{ value: 'MK', label: 'Marketing' },
-			{ value: 'OT', label: 'Outros' },
+			{ value: 'CP', label: 'Compensação' },
+			{ value: 'RC', label: 'Recuperação de Crédito' },
+			{ value: 'AO', label: 'Análise de Oportunidade' },
+			{ value: 'AU', label: 'Auditoria' },
+			{ value: 'CM', label: 'Comparativo' },
+			{ value: 'PL', label: 'Planejamento' },
+			{ value: 'CO', label: 'Consultoria' },
+			{ value: 'ES', label: 'Escrituração' },
+			{ value: 'RA', label: 'Radar' },
+			{ value: 'ST', label: 'Solicitação TTD' },
+			{ value: 'OT', label: 'Outro' },
 		];
 		const prioridadeOptions = [
 			{ value: '', label: 'Todas' },

@@ -5,8 +5,8 @@ import api from '../../../services/api';
 import { createProjeto } from '../../../services/projetos';
 import { getUsuarios } from '../../../services/usuarios';
 import { getClientes } from '../../../services/clientes';
-import { Modal, Input, message, Select } from 'antd';
-import { PlusOutlined, FolderOpenOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import { Modal, Input, message, Select, Button, Space, Card } from 'antd';
+import { PlusOutlined, FolderOpenOutlined, UnorderedListOutlined, SearchOutlined, ClearOutlined } from '@ant-design/icons';
 
 import type { Usuario } from '../../../types/usuario'
 import type { Projeto } from '../../../types/projeto'
@@ -84,7 +84,7 @@ const ProjetosPage: React.FC = () => {
   const [novoProjetoNome, setNovoProjetoNome] = useState('');
   const [novoProjetoPrioridade, setNovoProjetoPrioridade] = useState<'UT' | 'AL' | 'MD' | 'BA'>('MD');
   const [novoProjetoStatus, setNovoProjetoStatus] = useState<'NI' | 'EA' | 'C' | 'P'>('NI');
-  const [novoProjetoCategoria, setNovoProjetoCategoria] = useState<'DV' | 'MK' | 'OT' | 'CP'>('OT');
+  const [novoProjetoCategoria, setNovoProjetoCategoria] = useState<'CP' | 'RC' | 'AO' | 'AU' | 'CM' | 'PL' | 'CO' | 'ES' | 'RA' | 'ST' | 'OT'>('OT');
   const [novoProjetoResponsavel, setNovoProjetoResponsavel] = useState<number | undefined>(usuarios[0]?.id);
   const [novoProjetoClienteId, setNovoProjetoClienteId] = useState<number | undefined>(undefined);
   const [novoProjetoUsuariosAnexados, setNovoProjetoUsuariosAnexados] = useState<number[]>([]);
@@ -109,6 +109,24 @@ const ProjetosPage: React.FC = () => {
 
   const handleClienteSelect = (cliente: Cliente | null) => {
     setNovoProjetoClienteId(cliente?.id || undefined);
+  };
+
+  // Função para lidar com a seleção do usuário "Todos"
+  // Quando o usuário "Todos" é selecionado como responsável, anexa todos os outros usuários
+  const handleNovoProjetoResponsavelChange = (responsavelId: number) => {
+    const selectedUser = usuarios.find(u => u.id === responsavelId);
+    
+    if (selectedUser?.nome?.toLowerCase() === 'todos') {
+      // Anexa todos os usuários exceto o próprio "Todos"
+      const allOtherUserIds = usuarios
+        .filter(u => u.nome?.toLowerCase() !== 'todos')
+        .map(u => u.id);
+      
+      setNovoProjetoResponsavel(responsavelId);
+      setNovoProjetoUsuariosAnexados(allOtherUserIds);
+    } else {
+      setNovoProjetoResponsavel(responsavelId);
+    }
   };
 
   const handleAddProjeto = async () => {
@@ -328,10 +346,17 @@ const ProjetosPage: React.FC = () => {
                   size="large"
                   style={{ width: '100%' }}
                   options={[
-                    { value: 'DV', label: '💻 Desenvolvimento' },
-                    { value: 'MK', label: '📈 Marketing' },
                     { value: 'CP', label: '💰 Compensação' },
-                    { value: 'OT', label: '📋 Outros' },
+                    { value: 'RC', label: '📊 Recuperação de Crédito' },
+                    { value: 'AO', label: '🔍 Análise de Oportunidade' },
+                    { value: 'AU', label: '📋 Auditoria' },
+                    { value: 'CM', label: '📈 Comparativo' },
+                    { value: 'PL', label: '📅 Planejamento' },
+                    { value: 'CO', label: '💼 Consultoria' },
+                    { value: 'ES', label: '📝 Escrituração' },
+                    { value: 'RA', label: '📡 Radar' },
+                    { value: 'ST', label: '📄 Solicitação TTD' },
+                    { value: 'OT', label: '📋 Outro' },
                   ]}
                 />
               </div>
@@ -378,7 +403,7 @@ const ProjetosPage: React.FC = () => {
                 </label>
                 <Select
                   value={novoProjetoResponsavel}
-                  onChange={setNovoProjetoResponsavel}
+                  onChange={handleNovoProjetoResponsavelChange}
                   size="large"
                   style={{ width: '100%' }}
                   placeholder="Selecione o responsável"
@@ -529,89 +554,142 @@ const ProjetosPage: React.FC = () => {
 
         {/* Filters */}
         {viewMode === 'projetos' ? (
-          <div className="bg-transparent rounded-lg flex flex-wrap items-center space-x-4">
-            <input
-              type="text"
-              placeholder="Filtrar por nome"
-              value={filterNome}
-              onChange={e => setFilterNome(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <select
-              value={filterStatus || ''}
-              onChange={e => setFilterStatus(e.target.value || undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Status</option>
-              <option value="NI">Não Iniciado</option>
-              <option value="EA">Em Andamento</option>
-              <option value="C">Concluído</option>
-              <option value="P">Pausado</option>
-            </select>
-            <select
-              value={filterCategoria || ''}
-              onChange={e => setFilterCategoria(e.target.value || undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Categoria</option>
-              <option value="OT">Outros</option>
-              <option value="CP">Compensação</option>
-            </select>
-            <select
-              value={filterResponsavel || ''}
-              onChange={e => setFilterResponsavel(e.target.value ? Number(e.target.value) : undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Responsável</option>
-              {usuarios.map(u => (
-                <option key={u.id} value={u.id}>{u.nome}</option>
-              ))}
-            </select>
-            <select
-              value={filterClienteId || ''}
-              onChange={e => setFilterClienteId(e.target.value ? Number(e.target.value) : undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Cliente</option>
-              {clientes.map(c => (
-                <option key={c.id} value={c.id}>{c.razao_social}</option>
-              ))}
-            </select>
-          </div>
+          <Card className="w-full" size="small">
+            <Space wrap size="middle" className="w-full">
+              <Input
+                placeholder="Buscar por nome..."
+                prefix={<SearchOutlined />}
+                value={filterNome}
+                onChange={e => setFilterNome(e.target.value)}
+                style={{ width: 220 }}
+                allowClear
+              />
+              <Select
+                placeholder="Status"
+                value={filterStatus}
+                onChange={setFilterStatus}
+                style={{ width: 150 }}
+                allowClear
+                options={[
+                  { value: 'NI', label: 'Não Iniciado' },
+                  { value: 'EA', label: 'Em Andamento' },
+                  { value: 'C', label: 'Concluído' },
+                  { value: 'P', label: 'Pausado' },
+                ]}
+              />
+              <Select
+                placeholder="Categoria"
+                value={filterCategoria}
+                onChange={setFilterCategoria}
+                style={{ width: 200 }}
+                allowClear
+                options={[
+                  { value: 'CP', label: 'Compensação' },
+                  { value: 'RC', label: 'Recuperação de Crédito' },
+                  { value: 'AO', label: 'Análise de Oportunidade' },
+                  { value: 'AU', label: 'Auditoria' },
+                  { value: 'CM', label: 'Comparativo' },
+                  { value: 'PL', label: 'Planejamento' },
+                  { value: 'CO', label: 'Consultoria' },
+                  { value: 'ES', label: 'Escrituração' },
+                  { value: 'RA', label: 'Radar' },
+                  { value: 'ST', label: 'Solicitação TTD' },
+                  { value: 'OT', label: 'Outro' },
+                ]}
+              />
+              <Select
+                placeholder="Responsável"
+                value={filterResponsavel}
+                onChange={setFilterResponsavel}
+                style={{ width: 160 }}
+                allowClear
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                options={usuarios.map(u => ({ value: u.id, label: u.nome }))}
+              />
+              <Select
+                placeholder="Cliente"
+                value={filterClienteId}
+                onChange={setFilterClienteId}
+                style={{ width: 180 }}
+                allowClear
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                options={clientes.map(c => ({ value: c.id, label: c.razao_social }))}
+              />
+              {(filterNome || filterStatus || filterCategoria || filterResponsavel || filterClienteId) && (
+                <Button
+                  icon={<ClearOutlined />}
+                  onClick={() => {
+                    setFilterNome('');
+                    setFilterStatus(undefined);
+                    setFilterCategoria(undefined);
+                    setFilterResponsavel(undefined);
+                    setFilterClienteId(undefined);
+                  }}
+                >
+                  Limpar
+                </Button>
+              )}
+            </Space>
+          </Card>
         ) : (
-          <div className="bg-transparent rounded-lg flex flex-wrap items-center space-x-4">
-            <input
-              type="text"
-              placeholder="Filtrar por nome da etapa"
-              value={filterEtapaNome}
-              onChange={e => setFilterEtapaNome(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <select
-              value={filterEtapaStatus || ''}
-              onChange={e => setFilterEtapaStatus(e.target.value || undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Status da Etapa</option>
-              <option value="NI">Não Iniciada</option>
-              <option value="EA">Em Andamento</option>
-              <option value="C">Concluída</option>
-              <option value="P">Pausada</option>
-            </select>
-            <select
-              value={filterEtapaProjetoId || ''}
-              onChange={e => setFilterEtapaProjetoId(e.target.value ? Number(e.target.value) : undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Projeto relacionado</option>
-              {projetos.map(p => (
-                <option key={p.id} value={p.id}>{p.nome}</option>
-              ))}
-            </select>
-          </div>
+          <Card className="w-full" size="small">
+            <Space wrap size="middle" className="w-full">
+              <Input
+                placeholder="Buscar por nome da etapa..."
+                prefix={<SearchOutlined />}
+                value={filterEtapaNome}
+                onChange={e => setFilterEtapaNome(e.target.value)}
+                style={{ width: 220 }}
+                allowClear
+              />
+              <Select
+                placeholder="Status da Etapa"
+                value={filterEtapaStatus}
+                onChange={setFilterEtapaStatus}
+                style={{ width: 150 }}
+                allowClear
+                options={[
+                  { value: 'NI', label: 'Não Iniciada' },
+                  { value: 'EA', label: 'Em Andamento' },
+                  { value: 'C', label: 'Concluída' },
+                  { value: 'P', label: 'Pausada' },
+                ]}
+              />
+              <Select
+                placeholder="Projeto relacionado"
+                value={filterEtapaProjetoId}
+                onChange={setFilterEtapaProjetoId}
+                style={{ width: 200 }}
+                allowClear
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                options={projetos.map(p => ({ value: p.id, label: p.nome }))}
+              />
+              {(filterEtapaNome || filterEtapaStatus || filterEtapaProjetoId) && (
+                <Button
+                  icon={<ClearOutlined />}
+                  onClick={() => {
+                    setFilterEtapaNome('');
+                    setFilterEtapaStatus(undefined);
+                    setFilterEtapaProjetoId(undefined);
+                  }}
+                >
+                  Limpar
+                </Button>
+              )}
+            </Space>
+          </Card>
         )}
 
-        <main className="flex-grow flex overflow-hidden w-full">{viewMode === 'projetos' ? (
+        <main className="flex-grow flex overflow-hidden w-full mt-4">{viewMode === 'projetos' ? (
           <div className="w-full">
             <ProjetosList
             projetos={filteredProjetos.map(p => ({
@@ -697,8 +775,11 @@ const ProjetosPage: React.FC = () => {
           if (!update.id) return;
           try {
             setLoading(true);
-            await import('../../../services/projetos').then(m => m.updateProjeto(update.id as number, update));
+            const updatedProjeto = await import('../../../services/projetos').then(m => m.updateProjeto(update.id as number, update));
             message.success('Projeto atualizado com sucesso!');
+            // Update detailModalProjeto with the updated data to reflect changes immediately
+            // Merge the update with existing data in case backend doesn't return all fields
+            setDetailModalProjeto(prev => prev ? { ...prev, ...update, ...updatedProjeto } : updatedProjeto);
             fetchData();
           } catch {
             message.error('Erro ao atualizar projeto');

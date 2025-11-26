@@ -72,8 +72,17 @@ const priorityOptions = [
 ];
 
 const categoryOptions = [
-    { value: 'OT', label: 'Outro' },
     { value: 'CP', label: 'Compensação' },
+    { value: 'RC', label: 'Recuperação de Crédito' },
+    { value: 'AO', label: 'Análise de Oportunidade' },
+    { value: 'AU', label: 'Auditoria' },
+    { value: 'CM', label: 'Comparativo' },
+    { value: 'PL', label: 'Planejamento' },
+    { value: 'CO', label: 'Consultoria' },
+    { value: 'ES', label: 'Escrituração' },
+    { value: 'RA', label: 'Radar' },
+    { value: 'ST', label: 'Solicitação TTD' },
+    { value: 'OT', label: 'Outro' },
 ];
 
 // Helper to format date for input[type="date"]
@@ -526,6 +535,27 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
     console.log('Guias count:', guias.length);
   }, [guias]);
 
+  // Função para lidar com a seleção do usuário "Todos"
+  // Quando o usuário "Todos" é selecionado como responsável, anexa todos os outros usuários
+  const handleResponsavelChange = (responsavelId: number) => {
+    const selectedUser = usuarios.find(u => u.id === responsavelId);
+    
+    if (selectedUser?.nome?.toLowerCase() === 'todos') {
+      // Anexa todos os usuários exceto o próprio "Todos"
+      const allOtherUserIds = usuarios
+        .filter(u => u.nome?.toLowerCase() !== 'todos')
+        .map(u => u.id);
+      
+      setEditedProjeto(p => p ? { 
+        ...p, 
+        responsavel_id: responsavelId,
+        usuarios_anexados: allOtherUserIds 
+      } : null);
+    } else {
+      setEditedProjeto(p => p ? { ...p, responsavel_id: responsavelId } : null);
+    }
+  };
+
   const handleUpdateProjeto = () => {
     if (editedProjeto) {
       onUpdateProjeto(editedProjeto);
@@ -670,7 +700,7 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
             {isEditingProjeto ? <Input value={editedProjeto.nome} onChange={e => setEditedProjeto(p => p ? { ...p, nome: e.target.value } : null)} /> : <strong>{editedProjeto.nome}</strong>}
           </Descriptions.Item>
           <Descriptions.Item label="Responsável">
-            {isEditingProjeto ? <Select value={editedProjeto.responsavel_id} onChange={val => setEditedProjeto(p => p ? { ...p, responsavel_id: val } : null)} options={usuarios.map(u => ({ value: u.id, label: u.nome }))} style={{ width: '100%' }} /> : (usuarios.find(u => u.id === editedProjeto.responsavel_id)?.nome || 'N/A')}
+            {isEditingProjeto ? <Select value={editedProjeto.responsavel_id} onChange={handleResponsavelChange} options={usuarios.map(u => ({ value: u.id, label: u.nome }))} style={{ width: '100%' }} /> : (usuarios.find(u => u.id === editedProjeto.responsavel_id)?.nome || 'N/A')}
           </Descriptions.Item>
           
           <Descriptions.Item label="Cliente">

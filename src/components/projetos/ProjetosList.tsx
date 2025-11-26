@@ -1,5 +1,5 @@
 import React from 'react';
-import { List } from 'antd';
+import { List, Card } from 'antd';
 import ProjetoEtapaModal from './ProjetoEtapaModal';
 import ProjetoCard from './ProjetoCard';
 import type { Projeto } from '../../types/projeto';
@@ -62,52 +62,54 @@ const ProjetosList: React.FC<ProjetosListProps> = ({
   novoEtapaDataFim,
   setNovoEtapaDataFim
 }) => (
-  <List
-    className="w-full"
-    style={{ width: '100%' }}
-    grid={{ gutter: 16, column: 1 }}
-    dataSource={projetos}
-    loading={loading}
-    locale={{ emptyText: 'Nenhum projeto cadastrado.' }}
-    pagination={{
-      current: Math.floor(offset / limit) + 1,
-      pageSize: limit,
-      total: total,
-      onChange: onPageChange,
-      showSizeChanger: true,
-      pageSizeOptions: [5, 10, 20],
-    }}
-    renderItem={projeto => (
-      <React.Fragment>
-        <ProjetoCard
-          projeto={projeto}
-          usuarios={usuarios}
-          onClick={() => setDetailModalProjeto(projeto)}
-          onAddEtapa={onAddEtapa}
-          onDeleteProjeto={() => onDeleteProjeto(projeto.id)}
-        />
-        <ProjetoEtapaModal
-          projetoNome={projeto.nome}
-          open={addEtapaProjetoId === projeto.id}
-          onCancel={() => setAddEtapaProjetoId(null)}
-          onOk={handleAddEtapa}
-          novoEtapaNome={novoEtapaNome}
-          setNovoEtapaNome={setNovoEtapaNome}
-          novoEtapaStatus={novoEtapaStatus}
-          setNovoEtapaStatus={setNovoEtapaStatus}
-          novoEtapaDescricao={novoEtapaDescricao}
-          setNovoEtapaDescricao={setNovoEtapaDescricao}
-          novoEtapaDataInicio={novoEtapaDataInicio}
-          setNovoEtapaDataInicio={setNovoEtapaDataInicio}
-          novoEtapaDataPrazo={novoEtapaDataPrazo}
-          setNovoEtapaDataPrazo={setNovoEtapaDataPrazo}
-          novoEtapaDataFim={novoEtapaDataFim}
-          setNovoEtapaDataFim={setNovoEtapaDataFim}
-          etapas={projeto.etapas || []}
-        />
-      </React.Fragment>
-    )}
-  />
+  <Card title="Projetos" className="w-full rounded-lg shadow bg-white" style={{ width: '100%' }}>
+    <List
+      className="w-full"
+      style={{ width: '100%' }}
+      grid={{ gutter: 16, column: 1 }}
+      dataSource={projetos}
+      loading={loading}
+      locale={{ emptyText: 'Nenhum projeto cadastrado.' }}
+      pagination={{
+        current: Math.floor(offset / limit) + 1,
+        pageSize: limit,
+        total: total,
+        onChange: onPageChange,
+        showSizeChanger: true,
+        pageSizeOptions: [5, 10, 20],
+      }}
+      renderItem={projeto => (
+        <React.Fragment>
+          <ProjetoCard
+            projeto={projeto}
+            usuarios={usuarios}
+            onClick={() => setDetailModalProjeto(projeto)}
+            onAddEtapa={onAddEtapa}
+            onDeleteProjeto={() => onDeleteProjeto(projeto.id)}
+          />
+          <ProjetoEtapaModal
+            projetoNome={projeto.nome}
+            open={addEtapaProjetoId === projeto.id}
+            onCancel={() => setAddEtapaProjetoId(null)}
+            onOk={handleAddEtapa}
+            novoEtapaNome={novoEtapaNome}
+            setNovoEtapaNome={setNovoEtapaNome}
+            novoEtapaStatus={novoEtapaStatus}
+            setNovoEtapaStatus={setNovoEtapaStatus}
+            novoEtapaDescricao={novoEtapaDescricao}
+            setNovoEtapaDescricao={setNovoEtapaDescricao}
+            novoEtapaDataInicio={novoEtapaDataInicio}
+            setNovoEtapaDataInicio={setNovoEtapaDataInicio}
+            novoEtapaDataPrazo={novoEtapaDataPrazo}
+            setNovoEtapaDataPrazo={setNovoEtapaDataPrazo}
+            novoEtapaDataFim={novoEtapaDataFim}
+            setNovoEtapaDataFim={setNovoEtapaDataFim}
+            etapas={projeto.etapas || []}
+          />
+        </React.Fragment>
+      )}
+    />
+  </Card>
 );
 
 export default ProjetosList;

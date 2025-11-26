@@ -29,9 +29,17 @@ const prioridadeMap: Record<string, { color: string; label: string }> = {
   BA: { color: 'green', label: 'Baixa' },
 };
 const categoriaMap: Record<string, { color: string; label: string }> = {
-  DV: { color: 'geekblue', label: 'Desenvolvimento' },
-  MK: { color: 'purple', label: 'Marketing' },
-  OT: { color: 'default', label: 'Outros' },
+  CP: { color: 'purple', label: 'Compensação' },
+  RC: { color: 'green', label: 'Recuperação de Crédito' },
+  AO: { color: 'cyan', label: 'Análise de Oportunidade' },
+  AU: { color: 'orange', label: 'Auditoria' },
+  CM: { color: 'blue', label: 'Comparativo' },
+  PL: { color: 'geekblue', label: 'Planejamento' },
+  CO: { color: 'magenta', label: 'Consultoria' },
+  ES: { color: 'gold', label: 'Escrituração' },
+  RA: { color: 'lime', label: 'Radar' },
+  ST: { color: 'volcano', label: 'Solicitação TTD' },
+  OT: { color: 'default', label: 'Outro' },
 };
 
 const ProjetoCard: React.FC<ProjetoCardProps> = ({ projeto, usuarios, onClick, onDeleteProjeto, showDeleteButton = true, showStatus = true }) => (
