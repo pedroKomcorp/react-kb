@@ -1,7 +1,8 @@
 import axios from 'axios';
+const BASE_URL = 'http://192.168.1.150:8000/';
 
 const api = axios.create({
-  baseURL: 'http://192.168.1.150:8000/',
+  baseURL: BASE_URL,
 });
 
 // Add response interceptor to handle validation errors
@@ -26,5 +27,5 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
+export { BASE_URL };
 export default api;
