@@ -61,7 +61,7 @@ const ProtectedRoute: React.FC = () => {
     };
 
     validateToken();
-  }, [token]);
+  }, [logout, token]);
 
   if (checking) {
     return <div>Verificando autenticação...</div>;

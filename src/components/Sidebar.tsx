@@ -83,6 +83,18 @@ const Sidebar: React.FC = () => {
     </span>
   );
 
+  // Delay para expandir/contrair sidebar
+  const expandTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    if (expandTimeout.current) clearTimeout(expandTimeout.current);
+    expandTimeout.current = setTimeout(() => setIsExpanded(true), 250); // 250ms delay
+  };
+  const handleMouseLeave = () => {
+    if (expandTimeout.current) clearTimeout(expandTimeout.current);
+    expandTimeout.current = setTimeout(() => setIsExpanded(false), 250); // 250ms delay
+  };
+
   return (
     <div className="fixed left-0 z-20 mt-2">
       {/* Logo section */}
@@ -99,8 +111,8 @@ const Sidebar: React.FC = () => {
       {/* Navigation */}
       <nav className={`h-[calc(95vh-4rem)] overflow-hidden rounded-e-xl transition-all duration-700 ease-in-out ${isExpanded ? 'w-48' : 'w-16'}`}
       style={{ background: "linear-gradient(360deg,rgba(119,83,67, 1) 0%, rgba(31, 30, 39, 1) 60%)" }}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       >
       <div className="flex flex-col h-full">
       {/* Main navigation links */}
