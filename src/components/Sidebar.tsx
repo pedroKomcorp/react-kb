@@ -84,7 +84,7 @@ const Sidebar: React.FC = () => {
   );
 
   // Delay para expandir/contrair sidebar
-  const expandTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  const expandTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = () => {
     if (expandTimeout.current) clearTimeout(expandTimeout.current);
