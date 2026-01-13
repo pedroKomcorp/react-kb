@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
-import { Spin, Input, Select } from 'antd';
-import { getProjetos, getProjetoByID } from '../../../services/projetos';
+import { Spin, Input, Select, message } from 'antd';
+import { getProjetos, getProjetoByID, updateProjeto } from '../../../services/projetos';
 import { getUsuarios } from '../../../services/usuarios';
-import { getEtapasByProjeto } from '../../../services/etapas';
+import { getEtapasByProjeto, createEtapa, updateEtapa, deleteEtapa } from '../../../services/etapas';
 import ProjetoCarouselCard from './ProjetoCarouselCard';
 import ProjetoDetailModal from '../../projetos/ProjetoDetailModal';
 import EtapaDetailModal from '../../etapas/EtapaDetailModal';
@@ -21,13 +21,16 @@ const ProjetosWidget: React.FC = () => {
 		const [loadingSelectedProjeto, setLoadingSelectedProjeto] = useState(false);
 		const [selectedEtapa, setSelectedEtapa] = useState<Etapa | null>(null);
 		const carouselRef = useRef<HTMLDivElement>(null);
+		const containerRef = useRef<HTMLDivElement>(null);
 		const [canScrollLeft, setCanScrollLeft] = useState(false);
 		const [canScrollRight, setCanScrollRight] = useState(false);
-		const [cardWidth, setCardWidth] = useState(180); 
+		const [cardWidth, setCardWidth] = useState(180);
+		const [cardHeight, setCardHeight] = useState(160);
+		const [numRows, setNumRows] = useState(1);
 		const [nome, setNome] = useState('');
-		const [status, setStatus] = useState('');
-		const [categoria, setCategoria] = useState('');
-		const [prioridade, setPrioridade] = useState('');
+		const [status, setStatus] = useState<string[]>([]);
+		const [categoria, setCategoria] = useState<string[]>([]);
+		const [prioridade, setPrioridade] = useState<string[]>([]);
 
 		useEffect(() => {
 			async function fetchData() {
@@ -122,10 +125,46 @@ const ProjetosWidget: React.FC = () => {
 					const newCardWidth = Math.max(cardMinWidth, Math.min(280, calculatedWidth));
 					setCardWidth(newCardWidth);
 				}
+				
+				// Calculate number of rows based on container height
+				if (containerRef.current) {
+					const containerHeight = containerRef.current.offsetHeight;
+					const minCardHeight = 140;
+					const maxCardHeight = 200;
+					const rowGap = 12;
+					
+					// Calculate how many rows can fit
+					const availableHeight = containerHeight - 10; // Some padding
+					const possibleRows = Math.floor((availableHeight + rowGap) / (minCardHeight + rowGap));
+					const rows = Math.max(1, Math.min(4, possibleRows)); // Between 1 and 4 rows
+					
+					// Calculate optimal card height for the rows
+					const totalRowGaps = (rows - 1) * rowGap;
+					const availableCardHeight = (availableHeight - totalRowGaps) / rows;
+					const newCardHeight = Math.max(minCardHeight, Math.min(maxCardHeight, availableCardHeight));
+					
+					setNumRows(rows);
+					setCardHeight(newCardHeight);
+				}
 			}
 			window.addEventListener('resize', updateCardSize);
 			updateCardSize(); // Initial calculation
-			return () => window.removeEventListener('resize', updateCardSize);
+			
+			// Also observe container size changes (for grid resize)
+			const resizeObserver = new ResizeObserver(() => {
+				updateCardSize();
+			});
+			if (containerRef.current) {
+				resizeObserver.observe(containerRef.current);
+			}
+			if (carouselRef.current) {
+				resizeObserver.observe(carouselRef.current);
+			}
+			
+			return () => {
+				window.removeEventListener('resize', updateCardSize);
+				resizeObserver.disconnect();
+			};
 		}, [projetos]);
 
 		// Opções de filtro
@@ -158,12 +197,14 @@ const ProjetosWidget: React.FC = () => {
 			{ value: 'BA', label: 'Baixa' },
 		];
 
-		const projetosFiltrados = projetos.filter(p =>
+		const projetosFiltrados = projetos
+			.filter(p =>
 				(nome === '' || p.nome.toLowerCase().includes(nome.toLowerCase())) &&
-				(status === '' || p.status === status) &&
-				(categoria === '' || p.categoria === categoria) &&
-				(prioridade === '' || p.prioridade === prioridade)
-			);
+				(status.length === 0 || status.includes(p.status)) &&
+				(categoria.length === 0 || categoria.includes(p.categoria)) &&
+				(prioridade.length === 0 || prioridade.includes(p.prioridade))
+			)
+			;
 
 			// Atualiza estado dos botões de scroll
 			function updateScrollButtons() {
@@ -195,31 +236,51 @@ const ProjetosWidget: React.FC = () => {
 						value={nome}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value)}
 						className="min-w-[120px] flex-1"
+						style={{ height: '32px', overflow: 'hidden' }}
+						allowClear
 					/>
 					<Select
+						mode="multiple"
 						size="small"
 						value={status}
 						onChange={setStatus}
 						options={statusOptions}
 						className="min-w-[100px]"
+						style={{ height: '32px', overflow: 'hidden' }}
+						showArrow
+						allowClear
+						placeholder="Status"
+						tagRender={() => <span />} // Return an empty span
 					/>
 					<Select
+						mode="multiple"
 						size="small"
 						value={categoria}
 						onChange={setCategoria}
 						options={categoriaOptions}
 						className="min-w-[100px]"
+						style={{ height: '32px', overflow: 'hidden' }}
+						showArrow
+						allowClear
+						placeholder="Categoria"
+						tagRender={() => <span />} // Return an empty span
 					/>
 					<Select
+						mode="multiple"
 						size="small"
 						value={prioridade}
 						onChange={setPrioridade}
 						options={prioridadeOptions}
 						className="min-w-[100px]"
+						style={{ height: '32px', overflow: 'hidden' }}
+						showArrow
+						allowClear
+						placeholder="Prioridade"
+						tagRender={() => <span />} // Return an empty span
 					/>
 				</div>
 								{loading ? <Spin /> : (
-								<div className="relative w-full flex-1 flex items-center overflow-hidden min-h-0">
+								<div ref={containerRef} className="relative w-full flex-1 flex items-center overflow-hidden min-h-0">
 										<button
 											type="button"
 											className="widget-scroll-button absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-blue-100 border border-gray-300 rounded-full p-1 shadow transition disabled:opacity-30 flex items-center justify-center"
@@ -256,7 +317,7 @@ const ProjetosWidget: React.FC = () => {
 													<div
 														ref={carouselRef}
 														id="projetos-carousel"
-														className="flex items-stretch flex-row gap-3 overflow-x-auto custom-scrollbar w-full h-full px-2 py-1"
+														className="overflow-x-auto custom-scrollbar w-full h-full px-2 py-1"
 														style={{ 
 															scrollBehavior: 'smooth', 
 															minHeight: 0, 
@@ -267,28 +328,45 @@ const ProjetosWidget: React.FC = () => {
 														}}
 													>
 														{projetosFiltrados.length === 0 ? (
-															<div className="w-full flex items-center justify-center text-gray-500 text-sm">
+															<div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
 																Nenhum projeto encontrado.
 															</div>
 														) : (
-															projetosFiltrados.map(projeto => (
-																<div 
-																	key={projeto.id} 
-																	className="flex-shrink-0 pl-6 pr-6" 
-																	style={{ 
-																		width: `${cardWidth}px`,
-																		minWidth: `${cardWidth}px`,
-																		maxWidth: `${cardWidth}px`,
-																		scrollSnapAlign: 'start'
-																	}}
-																>
-																	<ProjetoCarouselCard
-																		projeto={projeto}
-																		usuarios={usuarios}
-																		onClick={() => handleProjetoSelection(projeto)}
-																	/>
-																</div>
-															))
+															<div 
+																className="grid gap-3"
+																style={{
+																	gridTemplateRows: `repeat(${numRows}, ${cardHeight}px)`,
+																	gridAutoFlow: 'column',
+																	gridAutoColumns: `${cardWidth}px`,
+																	width: 'max-content',
+																	minHeight: '100%',
+																	paddingLeft: '24px',
+																	paddingRight: '24px',
+																}}
+															>
+																{projetosFiltrados.map(projeto => (
+																	<div 
+																		key={projeto.id} 
+																		className="flex-shrink-0" 
+																		style={{ 
+																			width: `${cardWidth}px`,
+																			height: `${cardHeight}px`,
+																			scrollSnapAlign: 'start'
+																		}}
+																	>
+																		<ProjetoCarouselCard
+																			projeto={projeto}
+																			usuarios={usuarios}
+																			onClick={() => handleProjetoSelection(projeto)}
+																			onUpdate={(updatedProjeto) => {
+																				setProjetos(prev => prev.map(p => 
+																					p.id === updatedProjeto.id ? updatedProjeto : p
+																				));
+																			}}
+																		/>
+																	</div>
+																))}
+															</div>
 														)}
 													</div>
 										<button
@@ -331,16 +409,84 @@ const ProjetosWidget: React.FC = () => {
 					usuarios={usuarios}
 					open={!!selectedProjeto || loadingSelectedProjeto}
 					loading={loadingSelectedProjeto}
-					canEditProjeto={false}
-					canEditEtapa={false}
-					canAddEtapa={false}
-					canAddCredito={false}
+					canEditProjeto={true}
+					canEditEtapa={true}
+					canAddEtapa={true}
+					canAddCredito={true}
 					onClose={() => setSelectedProjeto(null)}
-					onAddEtapa={() => {}}
+					onAddEtapa={async (etapaData) => {
+						try {
+							await createEtapa(etapaData as Omit<Etapa, 'id' | 'created_at'>);
+							message.success('Etapa criada com sucesso!');
+							if (selectedProjeto) {
+								const token = localStorage.getItem('token');
+								const [updatedProjeto, etapas] = await Promise.all([
+									getProjetoByID(selectedProjeto.id, token || undefined),
+									getEtapasByProjeto(selectedProjeto.id)
+								]);
+								const projetoAtualizado = { ...updatedProjeto, etapas };
+								setSelectedProjeto(projetoAtualizado);
+								setProjetos(prev => prev.map(p => p.id === projetoAtualizado.id ? projetoAtualizado : p));
+							}
+						} catch (error) {
+							console.error('Erro ao criar etapa:', error);
+							message.error('Erro ao criar etapa');
+						}
+					}}
 					onSelectEtapa={(etapa) => setSelectedEtapa(etapa)}
-					onUpdateProjeto={() => {}}
-					onUpdateEtapa={() => {}}
-					onDeleteEtapa={() => {}}
+					onUpdateProjeto={async (projetoData) => {
+						try {
+							if (!selectedProjeto) return;
+							const token = localStorage.getItem('token');
+							const updated = await updateProjeto(selectedProjeto.id, projetoData, token || undefined);
+							message.success('Projeto atualizado!');
+							const etapas = await getEtapasByProjeto(selectedProjeto.id);
+							const projetoAtualizado = { ...updated, etapas };
+							setSelectedProjeto(projetoAtualizado);
+							setProjetos(prev => prev.map(p => p.id === projetoAtualizado.id ? projetoAtualizado : p));
+						} catch (error) {
+							console.error('Erro ao atualizar projeto:', error);
+							message.error('Erro ao atualizar projeto');
+						}
+					}}
+					onUpdateEtapa={async (etapaData) => {
+						try {
+							await updateEtapa(etapaData.id, etapaData);
+							message.success('Etapa atualizada!');
+							if (selectedProjeto) {
+								const token = localStorage.getItem('token');
+								const [updatedProjeto, etapas] = await Promise.all([
+									getProjetoByID(selectedProjeto.id, token || undefined),
+									getEtapasByProjeto(selectedProjeto.id)
+								]);
+								const projetoAtualizado = { ...updatedProjeto, etapas };
+								setSelectedProjeto(projetoAtualizado);
+								setProjetos(prev => prev.map(p => p.id === projetoAtualizado.id ? projetoAtualizado : p));
+							}
+						} catch (error) {
+							console.error('Erro ao atualizar etapa:', error);
+							message.error('Erro ao atualizar etapa');
+						}
+					}}
+					onDeleteEtapa={async (etapaId) => {
+						try {
+							await deleteEtapa(etapaId);
+							message.success('Etapa excluída!');
+							if (selectedProjeto) {
+								const token = localStorage.getItem('token');
+								const [updatedProjeto, etapas] = await Promise.all([
+									getProjetoByID(selectedProjeto.id, token || undefined),
+									getEtapasByProjeto(selectedProjeto.id)
+								]);
+								const projetoAtualizado = { ...updatedProjeto, etapas };
+								setSelectedProjeto(projetoAtualizado);
+								setProjetos(prev => prev.map(p => p.id === projetoAtualizado.id ? projetoAtualizado : p));
+							}
+						} catch (error) {
+							console.error('Erro ao excluir etapa:', error);
+							message.error('Erro ao excluir etapa');
+						}
+					}}
 				/>
 				<EtapaDetailModal
 					etapa={selectedEtapa}

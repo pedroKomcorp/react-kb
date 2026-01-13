@@ -73,3 +73,37 @@
   height: 100%;
   width: 100%;
 }
+
+/* Hide all scrollbars inside widgets */
+.widget-no-scrollbar,
+.widget-no-scrollbar *,
+.widget-container *,
+.widget-content * {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+.widget-no-scrollbar::-webkit-scrollbar,
+.widget-no-scrollbar *::-webkit-scrollbar,
+.widget-container *::-webkit-scrollbar,
+.widget-content *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Expanded widget styles */
+.widget-container.fixed {
+  animation: widget-expand 0.2s ease-out;
+}
+
+@keyframes widget-expand {
+  from {
+    opacity: 0.8;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

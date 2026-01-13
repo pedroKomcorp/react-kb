@@ -5,11 +5,11 @@ import { UndoOutlined } from '@ant-design/icons';
 const allWidgets = [
   { key: 'projetos', title: 'Projetos', type: 'projetos' },
   { key: 'calendario', title: 'Calendário', type: 'calendario' },
-  { key: 'bloco', title: 'Bloco de Notas', type: 'bloco' },
-  { key: 'linha', title: 'Linha do Tempo', type: 'linha' },
-  { key: 'log', title: 'Log de atividades', type: 'log' },
-  { key: 'eventos', title: 'Quadro de eventos', type: 'eventos' },
-  { key: 'humor', title: 'Humor', type: 'humor' },
+  // { key: 'bloco', title: 'Bloco de Notas', type: 'bloco' },
+  // { key: 'linha', title: 'Linha do Tempo', type: 'linha' },
+  // { key: 'log', title: 'Log de atividades', type: 'log' },
+  // { key: 'eventos', title: 'Quadro de eventos', type: 'eventos' },
+  // { key: 'humor', title: 'Humor', type: 'humor' },
 ];
 
 // Updated default layout based on your preferred configuration

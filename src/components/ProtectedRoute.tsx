@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router';
 import { useAuth } from '../hooks/UseAuth';
 import { BASE_URL } from '../services/api';
 
@@ -18,12 +18,9 @@ const ProtectedRoute: React.FC = () => {
 
       try {
 
-        console.log("BASE_URL:", BASE_URL);
-
         const res = await fetch(`${BASE_URL}/auth/validate`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
 
         const data = await res.json();
 
@@ -32,7 +29,7 @@ const ProtectedRoute: React.FC = () => {
 
           if (refreshToken) {
             try {
-              const refreshRes = await fetch(`${BASE_URL}auth/refresh`, {
+              const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh_token: refreshToken }),
@@ -64,4 +61,17 @@ const ProtectedRoute: React.FC = () => {
     };
 
     validateToken();
-}, [token]);
+  }, [logout, token]);
+
+  if (checking) {
+    return <div>Verificando autenticação...</div>;
+  }
+
+  if (!valid || !token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+};
+
+export default ProtectedRoute;

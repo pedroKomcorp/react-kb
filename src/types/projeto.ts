@@ -17,6 +17,7 @@ export type Projeto = {
   etapas?: Etapa[];
   usuarios_anexados?: number[]; // IDs of attached users
   creditos?: Credito[]; 
+  isPinned?: boolean;
 };
 
 interface AnexadoUser {
