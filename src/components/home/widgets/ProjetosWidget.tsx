@@ -28,9 +28,9 @@ const ProjetosWidget: React.FC = () => {
 		const [cardHeight, setCardHeight] = useState(160);
 		const [numRows, setNumRows] = useState(1);
 		const [nome, setNome] = useState('');
-		const [status, setStatus] = useState('');
-		const [categoria, setCategoria] = useState('');
-		const [prioridade, setPrioridade] = useState('');
+		const [status, setStatus] = useState<string[]>([]);
+		const [categoria, setCategoria] = useState<string[]>([]);
+		const [prioridade, setPrioridade] = useState<string[]>([]);
 
 		useEffect(() => {
 			async function fetchData() {
@@ -197,12 +197,14 @@ const ProjetosWidget: React.FC = () => {
 			{ value: 'BA', label: 'Baixa' },
 		];
 
-		const projetosFiltrados = projetos.filter(p =>
+		const projetosFiltrados = projetos
+			.filter(p =>
 				(nome === '' || p.nome.toLowerCase().includes(nome.toLowerCase())) &&
-				(status === '' || p.status === status) &&
-				(categoria === '' || p.categoria === categoria) &&
-				(prioridade === '' || p.prioridade === prioridade)
-			);
+				(status.length === 0 || status.includes(p.status)) &&
+				(categoria.length === 0 || categoria.includes(p.categoria)) &&
+				(prioridade.length === 0 || prioridade.includes(p.prioridade))
+			)
+			;
 
 			// Atualiza estado dos botões de scroll
 			function updateScrollButtons() {
@@ -234,27 +236,47 @@ const ProjetosWidget: React.FC = () => {
 						value={nome}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value)}
 						className="min-w-[120px] flex-1"
+						style={{ height: '32px', overflow: 'hidden' }}
+						allowClear
 					/>
 					<Select
+						mode="multiple"
 						size="small"
 						value={status}
 						onChange={setStatus}
 						options={statusOptions}
 						className="min-w-[100px]"
+						style={{ height: '32px', overflow: 'hidden' }}
+						showArrow
+						allowClear
+						placeholder="Status"
+						tagRender={() => <span />} // Return an empty span
 					/>
 					<Select
+						mode="multiple"
 						size="small"
 						value={categoria}
 						onChange={setCategoria}
 						options={categoriaOptions}
 						className="min-w-[100px]"
+						style={{ height: '32px', overflow: 'hidden' }}
+						showArrow
+						allowClear
+						placeholder="Categoria"
+						tagRender={() => <span />} // Return an empty span
 					/>
 					<Select
+						mode="multiple"
 						size="small"
 						value={prioridade}
 						onChange={setPrioridade}
 						options={prioridadeOptions}
 						className="min-w-[100px]"
+						style={{ height: '32px', overflow: 'hidden' }}
+						showArrow
+						allowClear
+						placeholder="Prioridade"
+						tagRender={() => <span />} // Return an empty span
 					/>
 				</div>
 								{loading ? <Spin /> : (

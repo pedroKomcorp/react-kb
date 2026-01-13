@@ -303,7 +303,6 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
         width: '100%',
         minHeight: 100,
         boxShadow: '0 4px 15px -3px rgba(0, 0, 0, 0.1), 0 2px 6px -2px rgba(0, 0, 0, 0.05)',
-        opacity: isPinned ? 0.8 : 1, // Make pinned projects slightly lighter
       }}
     >
       {/* Top gradient bar indicating status */}
@@ -316,7 +315,10 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
         </Tooltip>
       )}
 
-      <div className="p-3 flex flex-col h-[calc(100%-6px)]">
+      <div
+        className="p-3 flex flex-col h-[calc(100%-6px)]"
+        style={{ backgroundColor: priority?.dotColor || 'transparent' }} // Set background color based on prioridade
+      >
         {/* Compact Layout */}
         {size === 'compact' && (
           <div className="flex flex-col h-full justify-between">
@@ -357,33 +359,13 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
               </div>
             </div>
 
-            {/* Progress bar */}
+            {/* Progress count and percentage only */}
             {totalEtapas > 0 && (
               <div className="mb-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${progress}%`,
-                        background: progress === 100 
-                          ? 'linear-gradient(90deg, #22c55e, #16a34a)' 
-                          : 'linear-gradient(90deg, #3b82f6, #06b6d4)'
-                      }}
-                    />
-                  </div>
-                  <span className={`text-xs font-bold min-w-[36px] text-right ${
-                    progress === 100 ? 'text-green-600' : 'text-blue-600'
-                  }`}>
-                    {progress}%
-                  </span>
-                </div>
-                <div className="text-[10px] text-gray-500">
-                  <span className="font-medium text-gray-700">{etapasConcluidas}</span>
-                  <span> de </span>
-                  <span className="font-medium text-gray-700">{totalEtapas}</span>
-                  <span> etapas concluídas</span>
-                </div>
+                <span className={`text-xs font-bold ${progress === 100 ? 'text-green-600' : 'text-blue-600'}`}>{progress}%</span>
+                <span className="text-[10px] text-gray-500 ml-2">
+                  {etapasConcluidas} de {totalEtapas} etapas concluídas
+                </span>
               </div>
             )}
 
@@ -433,33 +415,13 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
               </div>
             </div>
 
-            {/* Progress section */}
+            {/* Progress count and percentage only */}
             {totalEtapas > 0 && (
               <div className="mb-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${progress}%`,
-                        background: progress === 100 
-                          ? 'linear-gradient(90deg, #22c55e, #16a34a)' 
-                          : 'linear-gradient(90deg, #3b82f6, #06b6d4)'
-                      }}
-                    />
-                  </div>
-                  <span className={`text-sm font-bold min-w-[40px] text-right ${
-                    progress === 100 ? 'text-green-600' : 'text-blue-600'
-                  }`}>
-                    {progress}%
-                  </span>
-                </div>
-                <div className="text-[10px] text-gray-500">
-                  <span className="font-medium text-gray-700">{etapasConcluidas}</span>
-                  <span> de </span>
-                  <span className="font-medium text-gray-700">{totalEtapas}</span>
-                  <span> etapas concluídas</span>
-                </div>
+                <span className={`text-sm font-bold ${progress === 100 ? 'text-green-600' : 'text-blue-600'}`}>{progress}%</span>
+                <span className="text-[10px] text-gray-500 ml-2">
+                  {etapasConcluidas} de {totalEtapas} etapas concluídas
+                </span>
               </div>
             )}
 
@@ -550,23 +512,11 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
         </Dropdown>
       )}
 
-      {/* Pinned icon */}
-      {isPinned && (
-        <div className="flex items-center gap-2">
-          {priority && (
-            <Tooltip title={`Prioridade: ${priority.label}`}>
-              <div className={`flex items-center gap-1 ${priority.color}`}>
-                <ThunderboltOutlined />
-                <span className="font-medium">{priority.label}</span>
-              </div>
-            </Tooltip>
-          )}
-          {isPinned && (
-            <Tooltip title="Projeto fixado">
-              <PushpinOutlined className="text-blue-500 text-lg" />
-            </Tooltip>
-          )}
-        </div>
+      {/* Add a pin icon to indicate fixed projects */}
+      {projeto.isPinned && (
+        <Tooltip title="Projeto fixado">
+          <PushpinOutlined className="absolute top-2 right-2 text-blue-500 text-lg" />
+        </Tooltip>
       )}
     </div>
     </>

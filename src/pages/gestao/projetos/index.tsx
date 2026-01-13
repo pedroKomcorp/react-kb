@@ -354,7 +354,7 @@ const ProjetosPage: React.FC = () => {
                     { value: 'PL', label: '📅 Planejamento' },
                     { value: 'CO', label: '💼 Consultoria' },
                     { value: 'ES', label: '📝 Escrituração' },
-                    { value: 'RA', label: '📡 Radar' },
+                    { value: 'RA', label: '🚚 Radar' },
                     { value: 'ST', label: '📄 Solicitação TTD' },
                     { value: 'OT', label: '📋 Outro' },
                   ]}
