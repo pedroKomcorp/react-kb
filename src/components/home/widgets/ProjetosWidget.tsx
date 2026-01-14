@@ -349,55 +349,57 @@ const ProjetosWidget: React.FC = () => {
 								{projetosFiltrados.length} {projetosFiltrados.length === 1 ? 'projeto' : 'projetos'}
 							</span>
 						</div>
-					</div>
 				</div>
-								{loading ? <Spin /> : (
-								<div ref={containerRef} className="relative w-full flex-1 flex items-center overflow-hidden min-h-0">
-										<button
-											type="button"
-												className="widget-scroll-button absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white border-2 rounded-full p-2 shadow-lg transition disabled:opacity-30 flex items-center justify-center"
-												style={{ 
-													display: projetosFiltrados.length > 0 ? 'flex' : 'none', 
-													width: '36px', 
-													height: '36px',
-													backgroundColor: '#BA8364',
-													borderColor: '#8B6347'
-												}}
-												onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9A6B4F'}
-												onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#BA8364'}
-											onClick={() => {
-												const el = carouselRef.current;
-												if (el) el.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-											}}
-											onMouseDown={() => {
-												const el = carouselRef.current;
-												if (!el) return;
-												const interval = setInterval(() => {
-														el.scrollBy({ left: -15, behavior: 'smooth' });
-													}, 50);
-													(window as any)._carouselLeftInterval = interval;
-												}}
-												onMouseUp={() => { clearInterval((window as any)._carouselLeftInterval); }}
-												onMouseLeave={() => { clearInterval((window as any)._carouselLeftInterval); }}
-												onTouchStart={() => {
-													const el = carouselRef.current;
-													if (!el) return;
-													const interval = setInterval(() => {
-														el.scrollBy({ left: -15, behavior: 'smooth' });
-													}, 50);
-												(window as any)._carouselLeftInterval = interval;
-											}}
-											onTouchEnd={() => { clearInterval((window as any)._carouselLeftInterval); }}
-											tabIndex={-1}
-											aria-label="Scroll left"
-											disabled={!canScrollLeft}
-										>
-											&#8592;
-										</button>
-													<div
-														ref={carouselRef}
-														id="projetos-carousel"
-															className="overflow-x-auto custom-scrollbar w-full h-full flex items-center"
+			</div>
+			{loading ? <Spin /> : (
+				<div ref={containerRef} className="relative w-full flex-1 flex items-center overflow-hidden min-h-0">
+					<button
+						type="button"
+						className="widget-scroll-button absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white border-2 rounded-full p-2 shadow-lg transition disabled:opacity-30 flex items-center justify-center"
+						style={{
+							display: projetosFiltrados.length > 0 ? 'flex' : 'none',
+							width: '36px',
+							height: '36px',
+							backgroundColor: '#BA8364',
+							borderColor: '#8B6347'
+						}}
+						onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9A6B4F'}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.backgroundColor = '#BA8364';
+							clearInterval((window as any)._carouselLeftInterval);
+						}}
+						onClick={() => {
+							const el = carouselRef.current;
+							if (el) el.scrollBy({ left: -cardWidth, behavior: 'smooth' });
+						}}
+						onMouseDown={() => {
+							const el = carouselRef.current;
+							if (!el) return;
+							const interval = setInterval(() => {
+								el.scrollBy({ left: -30, behavior: 'auto' });
+							}, 16);
+							(window as any)._carouselLeftInterval = interval;
+						}}
+						onMouseUp={() => { clearInterval((window as any)._carouselLeftInterval); }}
+						onTouchStart={() => {
+							const el = carouselRef.current;
+							if (!el) return;
+							const interval = setInterval(() => {
+								el.scrollBy({ left: -30, behavior: 'auto' });
+							}, 16);
+							(window as any)._carouselLeftInterval = interval;
+						}}
+						onTouchEnd={() => { clearInterval((window as any)._carouselLeftInterval); }}
+						tabIndex={-1}
+						aria-label="Scroll left"
+						disabled={!canScrollLeft}
+					>
+						&#8592;
+					</button>
+					<div
+								ref={carouselRef}
+								id="projetos-carousel"
+									className="overflow-x-auto custom-scrollbar w-full h-full flex items-center"
 															style={{ 
 																scrollBehavior: 'smooth', 
 																minHeight: 0, 
@@ -450,50 +452,52 @@ const ProjetosWidget: React.FC = () => {
 																))}
 															</div>
 														)}
-													</div>
-										<button
-											type="button"
-												className="widget-scroll-button absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white border-2 rounded-full p-2 shadow-lg transition disabled:opacity-30 flex items-center justify-center"
-												style={{ 
-													display: projetosFiltrados.length > 0 ? 'flex' : 'none', 
-													width: '36px', 
-													height: '36px',
-													backgroundColor: '#BA8364',
-													borderColor: '#8B6347'
-												}}
-												onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9A6B4F'}
-												onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#BA8364'}
-											onClick={() => {
-												const el = carouselRef.current;
-												if (el) el.scrollBy({ left: cardWidth, behavior: 'smooth' });
-											}}
-											onMouseDown={() => {
-												const el = carouselRef.current;
-												if (!el) return;
-												const interval = setInterval(() => {
-														el.scrollBy({ left: 15, behavior: 'smooth' });
-													}, 50);
-													(window as any)._carouselRightInterval = interval;
-												}}
-												onMouseUp={() => { clearInterval((window as any)._carouselRightInterval); }}
-												onMouseLeave={() => { clearInterval((window as any)._carouselRightInterval); }}
-												onTouchStart={() => {
-													const el = carouselRef.current;
-													if (!el) return;
-													const interval = setInterval(() => {
-														el.scrollBy({ left: 15, behavior: 'smooth' });
-													}, 50);
-												(window as any)._carouselRightInterval = interval;
-											}}
-											onTouchEnd={() => { clearInterval((window as any)._carouselRightInterval); }}
-											tabIndex={-1}
-											aria-label="Scroll right"
-											disabled={!canScrollRight}
-										>
-											&#8594;
-										</button>
-									</div>
-								)}
+										</div>
+					<button
+						type="button"
+						className="widget-scroll-button absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white border-2 rounded-full p-2 shadow-lg transition disabled:opacity-30 flex items-center justify-center"
+						style={{
+							display: projetosFiltrados.length > 0 ? 'flex' : 'none',
+							width: '36px',
+							height: '36px',
+							backgroundColor: '#BA8364',
+							borderColor: '#8B6347'
+						}}
+						onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9A6B4F'}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.backgroundColor = '#BA8364';
+							clearInterval((window as any)._carouselRightInterval);
+						}}
+						onClick={() => {
+							const el = carouselRef.current;
+							if (el) el.scrollBy({ left: cardWidth, behavior: 'smooth' });
+						}}
+						onMouseDown={() => {
+							const el = carouselRef.current;
+							if (!el) return;
+							const interval = setInterval(() => {
+								el.scrollBy({ left: 30, behavior: 'auto' });
+							}, 16);
+							(window as any)._carouselRightInterval = interval;
+						}}
+						onMouseUp={() => { clearInterval((window as any)._carouselRightInterval); }}
+						onTouchStart={() => {
+							const el = carouselRef.current;
+							if (!el) return;
+							const interval = setInterval(() => {
+								el.scrollBy({ left: 30, behavior: 'auto' });
+							}, 16);
+							(window as any)._carouselRightInterval = interval;
+						}}
+						onTouchEnd={() => { clearInterval((window as any)._carouselRightInterval); }}
+						tabIndex={-1}
+						aria-label="Scroll right"
+						disabled={!canScrollRight}
+					>
+						&#8594;
+					</button>
+				</div>
+			)}
 				<ProjetoDetailModal
 					projeto={selectedProjeto}
 					usuarios={usuarios}

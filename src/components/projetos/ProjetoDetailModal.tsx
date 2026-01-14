@@ -15,6 +15,7 @@ import {
 import type { Projeto } from '../../types/projeto';
 import type { Usuario } from '../../types/usuario';
 import type { Etapa, StatusEtapaEnum } from '../../types/etapa';
+import { StatusCreditoEnum } from '../../types/credito';
 import type { Credito } from '../../types/credito';
 import type { MovimentacaoCredito } from '../../types/movimentacao';
 import type { Guia, StatusGuiaEnum } from '../../types/guia';
@@ -127,6 +128,15 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
   const [isEditingProjeto, setIsEditingProjeto] = useState(false);
   const [editingEtapaId, setEditingEtapaId] = useState<number | null>(null);
   const [etapaForm] = Form.useForm();
+  const [newEtapa, setNewEtapa] = useState<Partial<Etapa>>({
+    nome: '',
+    status: 'NI',
+    descricao: '',
+    data_inicio: '',
+    data_prazo: '',
+    data_fim: '',
+    usuario_id: undefined
+  });
 
   // Credito management state
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
@@ -375,9 +385,6 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
       message.error('Erro ao excluir movimentação: ' + errorMsg);
     }
   };
-
-  // Consolidated state for new etapa form
-  const [newEtapa, setNewEtapa] = useState<Partial<Etapa>>({ nome: '', status: 'NI', descricao: '', data_inicio: '', data_prazo: '', data_fim: '', usuario_id: undefined });
 
   // Consolidated state for the project being edited
   const [editedProjeto, setEditedProjeto] = useState<Projeto | null>(null);
@@ -970,7 +977,7 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                         title={
                           <div className="flex items-center gap-2">
                             <Text strong style={{ fontSize: '15px' }}>{credito.nome}</Text>
-                            <Tag color={credito.status === 'ATIVO' ? 'green' : 'orange'} style={{ fontSize: '11px' }}>
+                            <Tag color={credito.status === StatusCreditoEnum.HABILITADO ? 'green' : 'orange'} style={{ fontSize: '11px' }}>
                               {credito.status}
                             </Tag>
                           </div>
