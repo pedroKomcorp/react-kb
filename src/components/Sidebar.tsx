@@ -46,7 +46,11 @@ const iconMap: { [key: string]: React.ElementType } = {
   'arrow-right-on-rectangle': ArrowRightOnRectangleIcon,
 };
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isLocked?: boolean;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isLocked = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState<{ [key: string]: boolean }>({});
   const location = useLocation();
@@ -87,6 +91,7 @@ const Sidebar: React.FC = () => {
   const expandTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = () => {
+    if (isLocked) return;
     if (expandTimeout.current) clearTimeout(expandTimeout.current);
     expandTimeout.current = setTimeout(() => setIsExpanded(true), 250); // 250ms delay
   };
@@ -96,7 +101,7 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="fixed left-0 z-20 mt-2">
+    <div className={`fixed left-0 z-20 mt-2 ${isLocked ? 'pointer-events-none opacity-50' : ''}`}>
       {/* Logo section */}
       <div className={`flex justify-end items-center ml-2 px-1 w-12 h-16`}>
       <div className="w-10 h-10 flex items-center justify-center">

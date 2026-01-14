@@ -198,9 +198,7 @@ const CreditoPage: React.FC = () => {
   const loadMovimentacoes = async (creditoId: number) => {
     setLoadingMovimentacoes(true);
     try {
-      const movimentacoesData = await getMovimentacoesByCredito(creditoId);
-      console.log('Raw movimentacoes data:', movimentacoesData);
-      
+      const movimentacoesData = await getMovimentacoesByCredito(creditoId);      
       // Handle different response formats
       if (Array.isArray(movimentacoesData)) {
         setMovimentacoes(movimentacoesData);

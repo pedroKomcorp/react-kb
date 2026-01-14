@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import WidgetGrid from "../../components/home/WidgetGrid";
-import { UndoOutlined } from '@ant-design/icons';
 
 const allWidgets = [
   { key: 'projetos', title: 'Projetos', type: 'projetos' },
@@ -75,17 +74,6 @@ const HomePage: React.FC = () => {
           defaultLayout={defaultLayout}
         />
       </div>
-      
-      {/* Floating Undo Button */}
-      <button 
-        className="fixed bottom-8 right-8 w-14 h-14 bg-white/20 hover:bg-white/60 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out shadow-lg backdrop-blur-sm z-50"
-        title="Undo Last Action"
-        onClick={() => {}}
-      >
-        <UndoOutlined 
-          style={{ fontSize: '24px', color: 'white' }} 
-        />
-      </button>
     </div>
   );
 }
