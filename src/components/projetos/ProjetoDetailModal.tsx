@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, List, Button, Input, Select, Space, Typography, Popconfirm, Descriptions, Divider, Tag, message, InputNumber, Form } from 'antd';
+import { Modal, List, Button, Input, Select, Space, Typography, Popconfirm, Descriptions, Tag, message, InputNumber, Form } from 'antd';
 import { 
   FolderOpenOutlined, 
   EditOutlined, 
@@ -48,7 +48,7 @@ interface ProjetoDetailModalProps {
   canAddCredito?: boolean;
 }
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // Helper to extract error messages from API responses
 const getErrorMessage = (error: unknown): string => {
@@ -128,15 +128,6 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
   const [isEditingProjeto, setIsEditingProjeto] = useState(false);
   const [editingEtapaId, setEditingEtapaId] = useState<number | null>(null);
   const [etapaForm] = Form.useForm();
-  const [newEtapa, setNewEtapa] = useState<Partial<Etapa>>({
-    nome: '',
-    status: 'NI',
-    descricao: '',
-    data_inicio: '',
-    data_prazo: '',
-    data_fim: '',
-    usuario_id: undefined
-  });
 
   // Credito management state
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
