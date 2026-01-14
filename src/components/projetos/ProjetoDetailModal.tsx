@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, List, Button, Input, Select, Space, Typography, Popconfirm, Descriptions, Divider, Tag, message, InputNumber } from 'antd';
-import { FolderOpenOutlined, EditOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, DeleteOutlined, UserOutlined, CreditCardOutlined, DollarOutlined } from '@ant-design/icons';
+import { Modal, List, Button, Input, Select, Space, Typography, Popconfirm, Descriptions, Divider, Tag, message, InputNumber, Form } from 'antd';
+import { 
+  FolderOpenOutlined, 
+  EditOutlined, 
+  SaveOutlined, 
+  CloseCircleOutlined, 
+  PlusOutlined, 
+  DeleteOutlined, 
+  UserOutlined, 
+  CreditCardOutlined, 
+  DollarOutlined,
+  CheckCircleOutlined
+} from '@ant-design/icons';
 import type { Projeto } from '../../types/projeto';
 import type { Usuario } from '../../types/usuario';
 import type { Etapa, StatusEtapaEnum } from '../../types/etapa';
@@ -8,12 +19,14 @@ import type { Credito } from '../../types/credito';
 import type { MovimentacaoCredito } from '../../types/movimentacao';
 import type { Guia, StatusGuiaEnum } from '../../types/guia';
 import ClienteSelector from '../cliente/ClienteSelector';
+import EtapaCreateModal from '../etapas/EtapaCreateModal';
 import type { Cliente } from '../../types/cliente';
 import { getCreditosCliente } from '../../services/creditos';
 import { getClientes } from '../../services/clientes';
 import { createMovimentacao, associarMovimentacaoAGuia, getMovimentacoesByProjeto, updateMovimentacao, deleteMovimentacao } from '../../services/movimentacoes';
 // Note: getMovimentacoesByProjetoDetalhadas is available for detailed reports if needed
 import { getGuias, createGuia, getGuiasByCliente, updateGuia } from '../../services/guias';
+import dayjs from 'dayjs';
 
 import { associateCreditoToProjeto, disassociateCreditoFromProjeto } from '../../services/projetos';
 
@@ -65,10 +78,10 @@ const getStatusTag = (status: string) => {
 };
 
 const priorityOptions = [
-    { value: 'UT', label: 'Urgente' },
-    { value: 'AL', label: 'Alta' },
-    { value: 'MD', label: 'Média' },
-    { value: 'BA', label: 'Baixa' },
+    { value: 'Urgente', label: 'Urgente' },
+    { value: 'Alta', label: 'Alta' },
+    { value: 'Média', label: 'Média' },
+    { value: 'Baixa', label: 'Baixa' },
 ];
 
 const categoryOptions = [
@@ -113,6 +126,7 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
   const [isAddingEtapa, setIsAddingEtapa] = useState(false);
   const [isEditingProjeto, setIsEditingProjeto] = useState(false);
   const [editingEtapaId, setEditingEtapaId] = useState<number | null>(null);
+  const [etapaForm] = Form.useForm();
 
   // Credito management state
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
@@ -568,25 +582,20 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
     setIsEditingProjeto(false);
   }
 
-  const handleAddEtapa = () => {
-    const payload = { ...newEtapa };
-    
+  const handleAddEtapa = async (values: { nome: string; descricao?: string; data_prazo?: dayjs.Dayjs; usuario_id: number }) => {
     const formattedPayload: Partial<Etapa> = {
-      ...payload,
+      nome: values.nome,
+      descricao: values.descricao || null,
+      status: 'NI',
       projeto_id: projeto?.id,
-      data_inicio: payload.data_inicio ? new Date(`${payload.data_inicio}T00:00:00`).toISOString() : undefined,
-      data_prazo: payload.data_prazo ? new Date(`${payload.data_prazo}T00:00:00`).toISOString() : undefined,
-      data_fim: payload.data_fim ? new Date(`${payload.data_fim}T00:00:00`).toISOString() : undefined,
+      usuario_id: values.usuario_id,
+      data_prazo: values.data_prazo?.toISOString() || null,
+      data_inicio: null,
+      data_fim: null,
     };
-    
-    Object.keys(formattedPayload).forEach(key => {
-        if (formattedPayload[key as keyof Etapa] === undefined) {
-            delete formattedPayload[key as keyof Etapa];
-        }
-    });
 
     onAddEtapa(formattedPayload);
-    setNewEtapa({ nome: '', status: 'NI', descricao: '', data_inicio: '', data_prazo: '', data_fim: '', usuario_id: undefined });
+    etapaForm.resetFields();
     setIsAddingEtapa(false);
   }
 
@@ -674,28 +683,75 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
       open={open}
       onCancel={onClose}
       footer={null}
-      width={900}
+      width={1000}
+      style={{ top: 20 }}
+      bodyStyle={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto', padding: 0 }}
       title={
-        <Space align="center" size="middle">
-            <FolderOpenOutlined style={{ color: '#1890ff' }} />
-            <Title level={4} style={{ margin: 0 }}>{editedProjeto.nome}</Title>
-        </Space>
+        <div className="flex items-center gap-3 py-2">
+          <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg">
+            <FolderOpenOutlined className="text-white text-xl" />
+          </div>
+          <div>
+            <div className="text-xl font-bold text-gray-800">{editedProjeto.nome}</div>
+            <div className="text-xs text-gray-500">
+              {categoryOptions.find(c=>c.value === editedProjeto.categoria)?.label} • {getStatusTag(editedProjeto.status)}
+            </div>
+          </div>
+        </div>
       }
     >
-      <div className="space-y-4 pt-4">
+      <div className="p-6 space-y-6">
+        {/* Edit Controls */}
         <div className="flex justify-end gap-2">
-            {/* --- CONDITIONAL RENDERING APPLIED --- */}
             {!isEditingProjeto ? (
-                canEditProjeto && <Button icon={<EditOutlined />} onClick={() => setIsEditingProjeto(true)}>Editar Projeto</Button>
+                canEditProjeto && (
+                  <Button 
+                    icon={<EditOutlined />} 
+                    onClick={() => setIsEditingProjeto(true)}
+                    size="large"
+                    style={{
+                      borderColor: '#3b82f6',
+                      color: '#3b82f6',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Editar Projeto
+                  </Button>
+                )
             ) : (
                 <>
-                    <Button icon={<CloseCircleOutlined />} onClick={handleCancelEditProjeto}>Cancelar</Button>
-                    <Button type="primary" icon={<SaveOutlined />} onClick={handleUpdateProjeto}>Salvar Projeto</Button>
+                    <Button 
+                      icon={<CloseCircleOutlined />} 
+                      onClick={handleCancelEditProjeto}
+                      size="large"
+                      style={{ fontWeight: 600 }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="primary" 
+                      icon={<SaveOutlined />} 
+                      onClick={handleUpdateProjeto}
+                      size="large"
+                      style={{
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+                        borderColor: '#3b82f6',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Salvar Projeto
+                    </Button>
                 </>
             )}
         </div>
 
-        <Descriptions bordered column={2} size="small">
+        {/* Project Details Card */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+            <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-400 rounded-full"></div>
+            <h3 className="text-lg font-bold text-gray-800">Informações do Projeto</h3>
+          </div>
+          <Descriptions bordered column={2} size="middle" labelStyle={{ fontWeight: 600, background: '#f9fafb' }}>
           <Descriptions.Item label="Nome do Projeto">
             {isEditingProjeto ? <Input value={editedProjeto.nome} onChange={e => setEditedProjeto(p => p ? { ...p, nome: e.target.value } : null)} /> : <strong>{editedProjeto.nome}</strong>}
           </Descriptions.Item>
@@ -729,7 +785,25 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
             {isEditingProjeto ? <Select value={editedProjeto.status} onChange={val => setEditedProjeto(p => p ? { ...p, status: val } : null)} options={statusOptions.map(s=> ({value: s.value, label: s.label}))} style={{ width: '100%' }} /> : getStatusTag(editedProjeto.status)}
           </Descriptions.Item>
            <Descriptions.Item label="Prioridade">
-            {isEditingProjeto ? <Select value={editedProjeto.prioridade} onChange={val => setEditedProjeto(p => p ? { ...p, prioridade: val } : null)} options={priorityOptions} style={{ width: '100%' }} /> : editedProjeto.prioridade}
+            {isEditingProjeto ? (
+              <Select 
+                value={editedProjeto.prioridade} 
+                onChange={val => setEditedProjeto(p => p ? { ...p, prioridade: val } : null)} 
+                options={priorityOptions} 
+                style={{ width: '100%' }} 
+              />
+            ) : (
+              <Tag 
+                color={
+                  editedProjeto.prioridade === 'UT' ? 'red' :
+                  editedProjeto.prioridade === 'AL' ? 'orange' :
+                  editedProjeto.prioridade === 'MD' ? 'gold' : 'green'
+                }
+                style={{ fontSize: '13px', padding: '4px 12px' }}
+              >
+                {priorityOptions.find(p => p.value === editedProjeto.prioridade)?.label || editedProjeto.prioridade}
+              </Tag>
+            )}
           </Descriptions.Item>
 
           <Descriptions.Item label="Categoria">
@@ -747,7 +821,28 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
           </Descriptions.Item>
 
           <Descriptions.Item label="Descrição" span={2}>
-            {isEditingProjeto ? <Input.TextArea value={editedProjeto.descricao || ''} onChange={e => setEditedProjeto(p => p ? { ...p, descricao: e.target.value } : null)} rows={3}/> : (editedProjeto.descricao || '-')}
+            {isEditingProjeto ? (
+              <Input.TextArea 
+                value={editedProjeto.descricao || ''} 
+                onChange={e => setEditedProjeto(p => p ? { ...p, descricao: e.target.value } : null)} 
+                rows={4}
+                placeholder="Descreva os objetivos, escopo e detalhes relevantes do projeto..."
+                style={{ fontSize: '14px' }}
+              />
+            ) : (
+              <div style={{ maxHeight: '200px', overflowY: 'auto', padding: '8px', backgroundColor: '#fafafa', borderRadius: '6px', fontSize: '14px', lineHeight: '1.6' }}>
+                {editedProjeto.descricao ? (
+                  <Typography.Paragraph 
+                    ellipsis={{ rows: 3, expandable: true, symbol: 'Ver mais' }}
+                    style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}
+                  >
+                    {editedProjeto.descricao}
+                  </Typography.Paragraph>
+                ) : (
+                  <span style={{ color: '#999', fontStyle: 'italic' }}>Sem descrição</span>
+                )}
+              </div>
+            )}
           </Descriptions.Item>
            <Descriptions.Item label="Usuários Anexados" span={2}>
             {isEditingProjeto ? (
@@ -758,23 +853,28 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                 : '-'
             )}
           </Descriptions.Item>
-        </Descriptions>
+          </Descriptions>
+        </div>
 
         {editedProjeto.categoria === 'CP' && (
-          <>
-            <Divider />
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <Title level={5}>
-                  <CreditCardOutlined style={{ marginRight: 8 }} />
-                  Créditos Associados ({(editedProjeto.creditos || []).length})
-                </Title>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-400 rounded-lg">
+                <CreditCardOutlined className="text-white text-lg" />
               </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">Créditos Associados</h3>
+                <p className="text-xs text-gray-500">{(editedProjeto.creditos || []).length} crédito(s)</p>
+              </div>
+            </div>
 
               {/* Add Credito Section */}
               {canAddCredito !== false && (
-                <div className="bg-gray-50 p-4 rounded-lg mb-4 border">
-                  <Title level={5}>Associar Novo Crédito</Title>
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-5 rounded-xl mb-4 border-2 border-blue-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <PlusOutlined className="text-blue-600" />
+                    <h4 className="text-md font-semibold text-gray-800">Associar Novo Crédito</h4>
+                  </div>
                   <Space direction="vertical" style={{ width: '100%' }} size="middle">
                     {editedProjeto.cliente_id ? (
                       <>
@@ -866,15 +966,24 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                       ] : []}
                     >
                       <List.Item.Meta
-                        avatar={<CreditCardOutlined style={{ fontSize: 20, color: '#1890ff' }} />}
-                        title={credito.nome}
+                        avatar={<CreditCardOutlined style={{ fontSize: 22, color: '#1890ff' }} />}
+                        title={
+                          <div className="flex items-center gap-2">
+                            <Text strong style={{ fontSize: '15px' }}>{credito.nome}</Text>
+                            <Tag color={credito.status === 'ATIVO' ? 'green' : 'orange'} style={{ fontSize: '11px' }}>
+                              {credito.status}
+                            </Tag>
+                          </div>
+                        }
                         description={
-                          <div>
-                            <div>Saldo: {new Intl.NumberFormat('pt-BR', { 
-                              style: 'currency', 
-                              currency: 'BRL' 
-                            }).format(credito.saldo_atual)}</div>
-                            <div>Status: {credito.status}</div>
+                          <div style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>
+                            <div style={{ fontSize: '16px', fontWeight: 600, color: '#52c41a', marginBottom: '4px' }}>
+                              {new Intl.NumberFormat('pt-BR', { 
+                                style: 'currency', 
+                                currency: 'BRL' 
+                              }).format(credito.saldo_atual)}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#999' }}>Saldo disponível</div>
                           </div>
                         }
                       />
@@ -888,17 +997,24 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                   <p>Projetos de categoria compensação podem ter créditos associados</p>
                 </div>
               )}
-            </div>
-          </>
+          </div>
         )}
 
-        <Divider />
-
-        {editedProjeto.categoria === 'CP' ? (
-          // Movimentacoes section for CP (Compensação) projects
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <Title level={5}>Movimentações ({movimentacoes.length})</Title>
+        {/* Movimentações / Etapas Card */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          {editedProjeto.categoria === 'CP' ? (
+            // Movimentacoes section for CP (Compensação) projects
+            <div>
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-400 rounded-lg">
+                    <DollarOutlined className="text-white text-lg" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">Movimentações</h3>
+                    <p className="text-xs text-gray-500">{movimentacoes.length} movimentação(ões)</p>
+                  </div>
+                </div>
               <Button 
                 type="primary" 
                 ghost 
@@ -1242,18 +1358,24 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                     className="hover:bg-gray-50 rounded-md"
                   >
                     <List.Item.Meta
-                      avatar={<DollarOutlined style={{ fontSize: 20, color: '#52c41a' }} />}
+                      avatar={<DollarOutlined style={{ fontSize: 22, color: '#52c41a' }} />}
                       title={
                         <div className="flex items-center gap-2">
-                          <Text strong>{movimentacao.descricao}</Text>
-                          <Tag color="blue">COMPENSAÇÃO</Tag>
-                          {hasGuia && <Tag color="green">Com Guia</Tag>}
+                          <Text strong style={{ fontSize: '15px' }}>{movimentacao.descricao}</Text>
+                          <Tag color="blue" style={{ fontSize: '11px' }}>COMPENSAÇÃO</Tag>
+                          {hasGuia && <Tag color="green" style={{ fontSize: '11px' }}>Com Guia</Tag>}
                         </div>
                       }
                       description={
-                        <div>
-                          <div>Crédito: {credito?.nome || 'N/A'}</div>
-                          <div>Referência: {movimentacao.referencia_externa}</div>
+                        <div style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>
+                          <div style={{ marginBottom: '2px' }}>
+                            <strong>Crédito:</strong> {credito?.nome || 'N/A'}
+                          </div>
+                          {movimentacao.referencia_externa && (
+                            <div>
+                              <strong>Referência:</strong> {movimentacao.referencia_externa}
+                            </div>
+                          )}
                         </div>
                       }
                     />
@@ -1274,43 +1396,38 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
             />
           </div>
         ) : (
-          // Regular etapas section for non-CP projects
-          <div>
-            <div className="flex justify-between items-center mb-2">
-                <Title level={5}>Etapas ({Array.isArray(editedProjeto.etapas) ? editedProjeto.etapas.length : 0})</Title>
+            // Regular etapas section for non-CP projects
+            <div>
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-400 rounded-lg">
+                    <CheckCircleOutlined className="text-white text-lg" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">Etapas</h3>
+                    <p className="text-xs text-gray-500">{Array.isArray(editedProjeto.etapas) ? editedProjeto.etapas.length : 0} etapa(s)</p>
+                  </div>
+                </div>
                 {canAddEtapa && (
-                    <Button type="primary" ghost icon={<PlusOutlined />} onClick={() => setIsAddingEtapa(v => !v)}>
-                        {isAddingEtapa ? 'Cancelar' : 'Adicionar Etapa'}
+                    <Button type="primary" ghost icon={<PlusOutlined />} onClick={() => setIsAddingEtapa(true)}>
+                        Adicionar Etapa
                     </Button>
                 )}
             </div>
 
-            {isAddingEtapa && canAddEtapa && (
-              <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-dashed">
-                <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                    <Input value={newEtapa.nome} onChange={e => setNewEtapa(s => ({...s, nome: e.target.value}))} placeholder="Nome da nova etapa" />
-                    <Input.TextArea value={newEtapa.descricao || ''} onChange={e => setNewEtapa(s => ({...s, descricao: e.target.value}))} placeholder="Descrição da etapa" rows={2}/>
-                    <Select
-                      showSearch
-                      placeholder="Selecione o responsável pela etapa"
-                      value={newEtapa.usuario_id}
-                      onChange={val => setNewEtapa(e => ({...e, usuario_id: val}))}
-                      options={usuarios.map(u => ({ value: u.id, label: u.nome }))}
-                      style={{ width: '100%' }}
-                      filterOption={(input, option) =>
-                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                      }
-                    />
-                    <Space wrap>
-                        <Select value={newEtapa.status} onChange={val => setNewEtapa(s => ({...s, status: val as StatusEtapaEnum}))} options={statusOptions.map(s => ({value: s.value, label: s.label}))} style={{ width: 150 }} placeholder="Status" />
-                        <Input addonBefore="Início" value={newEtapa.data_inicio || ''} onChange={e => setNewEtapa(s => ({...s, data_inicio: e.target.value}))} type="date" style={{ width: 200 }} />
-                        <Input addonBefore="Prazo" value={newEtapa.data_prazo || ''} onChange={e => setNewEtapa(s => ({...s, data_prazo: e.target.value}))} type="date" style={{ width: 200 }} />
-                        <Input addonBefore="Fim" value={newEtapa.data_fim || ''} onChange={e => setNewEtapa(s => ({...s, data_fim: e.target.value}))} type="date" style={{ width: 200 }} />
-                    </Space>
-                    <Button type="primary" loading={loading} onClick={handleAddEtapa} icon={<SaveOutlined />}>Salvar Etapa</Button>
-                </Space>
-              </div>
-            )}
+            {/* Etapa Create Modal */}
+            <EtapaCreateModal
+              open={isAddingEtapa}
+              onCancel={() => {
+                setIsAddingEtapa(false);
+                etapaForm.resetFields();
+              }}
+              onFinish={handleAddEtapa}
+              usuarios={usuarios}
+              projetoNome={editedProjeto.nome}
+              loading={loading}
+              form={etapaForm}
+            />
 
             <List
               size="large"
@@ -1358,18 +1475,38 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                   return (
                       <List.Item
                           actions={canEditEtapa ? [
-                              <Button type="link" onClick={(e) => { e.stopPropagation(); handleStartEditEtapa(etapa); }}>Editar</Button>
+                              <Button type="link" onClick={(e) => { e.stopPropagation(); handleStartEditEtapa(etapa); }} key="edit">Editar</Button>
                           ] : []}
                           className="hover:bg-gray-50 rounded-md cursor-pointer"
                           onClick={() => onSelectEtapa(etapa)}
                       >
                           <List.Item.Meta
-                              title={<Text strong>{etapa.nome}</Text>}
-                              description={etapa.descricao || '-'}
+                              title={
+                                <div className="flex items-center gap-2">
+                                  <Text strong style={{ fontSize: '15px' }}>{etapa.nome}</Text>
+                                  {etapa.data_prazo && (
+                                    <Tag color="blue" style={{ fontSize: '11px' }}>
+                                      Prazo: {new Date(etapa.data_prazo).toLocaleDateString('pt-BR')}
+                                    </Tag>
+                                  )}
+                                </div>
+                              }
+                              description={
+                                etapa.descricao ? (
+                                  <Typography.Paragraph 
+                                    ellipsis={{ rows: 2, expandable: true, symbol: 'mais' }}
+                                    style={{ marginBottom: 0, marginTop: 4, fontSize: '13px', color: '#666' }}
+                                  >
+                                    {etapa.descricao}
+                                  </Typography.Paragraph>
+                                ) : (
+                                  <span style={{ color: '#999', fontSize: '13px', fontStyle: 'italic' }}>Sem descrição</span>
+                                )
+                              }
                           />
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3">
                               {responsavel && (
-                                <Tag icon={<UserOutlined />}>
+                                <Tag icon={<UserOutlined />} style={{ fontSize: '12px' }}>
                                   {responsavel.nome}
                                 </Tag>
                               )}
@@ -1379,8 +1516,9 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                   );
               }}
             />
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </Modal>
   );

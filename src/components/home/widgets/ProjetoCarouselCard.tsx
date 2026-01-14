@@ -1,6 +1,5 @@
 import React, { useRef, useState, useLayoutEffect, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Avatar, Tooltip, Dropdown, Modal, Form, Input, DatePicker, Select, message } from 'antd';
+import { Avatar, Tooltip, Dropdown, Form, message } from 'antd';
 import { 
   CalendarOutlined, 
   TeamOutlined, 
@@ -17,8 +16,10 @@ import type { MenuProps } from 'antd';
 import dayjs from 'dayjs';
 import { updateProjeto, getProjetoByID } from '../../../services/projetos';
 import { createEtapa, getEtapasByProjeto } from '../../../services/etapas';
+import EtapaCreateModal from '../../etapas/EtapaCreateModal';
 import type { Projeto } from '../../../types/projeto';
 import type { Usuario } from '../../../types/usuario';
+import { useError } from '../../../context/ErrorContext';
 
 interface ProjetoCarouselCardProps {
   projeto: Projeto;
@@ -36,6 +37,7 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [form] = Form.useForm();
+  const { addError } = useError();
 
   // Status config with icons and gradients
   const statusConfig: { [key: string]: { label: string; icon: React.ReactNode; gradient: string; textColor: string } } = {
@@ -102,7 +104,7 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
       onUpdate?.(updated);
     } catch (error) {
       console.error('Error updating status:', error);
-      message.error('Erro ao atualizar status');
+      addError('Erro ao atualizar status do projeto');
     }
   };
 
@@ -134,7 +136,7 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
       }
     } catch (error) {
       console.error('Error creating etapa:', error);
-      message.error('Erro ao criar etapa');
+      addError('Erro ao criar etapa. Tente novamente.');
     } finally {
       setCreatingEtapa(false);
     }
@@ -203,19 +205,19 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
   useLayoutEffect(() => {
     function checkSize() {
       if (ref.current) {
-        const width = ref.current.offsetWidth;
-        if (width < 160) {
-          setSize('compact');
-        } else if (width < 220) {
-          setSize('normal');
-        } else {
           setSize('expanded');
-        }
       }
     }
     checkSize();
-    window.addEventListener('resize', checkSize);
-    return () => window.removeEventListener('resize', checkSize);
+
+    // Observe the widget's own size, not the window
+    const resizeObserver = new window.ResizeObserver(checkSize);
+    if (ref.current) {
+      resizeObserver.observe(ref.current);
+    }
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, []);
 
   const status = statusConfig[projeto.status] || statusConfig['NI'];
@@ -229,63 +231,22 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
 
   // Z-index para expanded
   const dropdownZ = size === 'expanded' ? 1000003 : 1000003;
-  const modalZ = size === 'expanded' ? 1000003 : 1000003;
-
-  // Renderização condicional do Modal via Portal se expanded
-  const etapaModal = (
-    <Modal
-      title={`Nova Etapa - ${projeto.nome}`}
-      open={etapaModalOpen}
-      onCancel={() => {
-        setEtapaModalOpen(false);
-        form.resetFields();
-      }}
-      onOk={() => form.submit()}
-      confirmLoading={creatingEtapa}
-      okText="Criar"
-      cancelText="Cancelar"
-      style={modalZ ? { zIndex: modalZ } : undefined}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleCreateEtapa}
-        initialValues={{ usuario_id: Number(localStorage.getItem('user_id')) }}
-      >
-        <Form.Item
-          name="nome"
-          label="Nome da Etapa"
-          rules={[{ required: true, message: 'Informe o nome da etapa' }]}
-        >
-          <Input placeholder="Nome da etapa" />
-        </Form.Item>
-        <Form.Item name="descricao" label="Descrição">
-          <Input.TextArea rows={3} placeholder="Descrição (opcional)" />
-        </Form.Item>
-        <Form.Item name="data_prazo" label="Prazo">
-          <DatePicker className="w-full" format="DD/MM/YYYY" placeholder="Selecione o prazo" />
-        </Form.Item>
-        <Form.Item
-          name="usuario_id"
-          label="Responsável"
-          rules={[{ required: true, message: 'Selecione o responsável' }]}
-        >
-          <Select placeholder="Selecione o responsável">
-            {usuarios.map(u => (
-              <Select.Option key={u.id} value={u.id}>{u.nome}</Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-      </Form>
-    </Modal>
-  );
 
   return (
     <>
-      {/* Etapa Modal */}
-      {size === 'expanded'
-        ? ReactDOM.createPortal(etapaModal, document.body)
-        : etapaModal}
+      {/* Etapa Create Modal */}
+      <EtapaCreateModal
+        open={etapaModalOpen}
+        onCancel={() => {
+          setEtapaModalOpen(false);
+          form.resetFields();
+        }}
+        onFinish={handleCreateEtapa}
+        usuarios={usuarios}
+        projetoNome={projeto.nome}
+        loading={creatingEtapa}
+        form={form}
+      />
     <div
       ref={ref}
       onClick={(e) => {
@@ -315,27 +276,17 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
         </Tooltip>
       )}
 
-      <div
-        className="p-3 flex flex-col h-[calc(100%-6px)]"
-        style={{ backgroundColor: priority?.dotColor || 'transparent' }} // Set background color based on prioridade
-      >
+      <div className="p-3 flex flex-col h-[calc(100%-6px)]">
         {/* Compact Layout */}
         {size === 'compact' && (
           <div className="flex flex-col h-full justify-between">
-            <div>
-              <Tooltip title={categoria.label}>
-                <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold ${categoria.bgColor} ${categoria.textColor} mb-1`}>
-                  {categoria.abbrev}
-                </span>
-              </Tooltip>
-              <div className="font-semibold text-xs text-gray-800 line-clamp-2" title={projeto.nome}>
-                {projeto.nome}
-              </div>
+            <div className="font-semibold text-[10px] sm:text-xs text-gray-800 line-clamp-3 leading-tight" title={projeto.nome}>
+              {projeto.nome}
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className={`text-lg ${status.textColor}`}>{status.icon}</span>
+            <div className="flex items-center justify-between mt-1">
+              <span className={`text-sm ${status.textColor}`}>{status.icon}</span>
               {totalEtapas > 0 && (
-                <span className="text-[10px] text-gray-500">{progress}%</span>
+                <span className="text-[9px] text-gray-600 font-medium">{progress}%</span>
               )}
             </div>
           </div>
@@ -346,15 +297,15 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
           <div className="flex flex-col h-full">
             {/* Category badge */}
             <Tooltip title={categoria.label}>
-              <span className={`inline-block self-start px-2 py-0.5 rounded-md text-[10px] font-bold ${categoria.bgColor} ${categoria.textColor} mb-1.5`}>
+              <span className={`inline-block self-start px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] md:text-xs font-bold ${categoria.bgColor} ${categoria.textColor} mb-1.5`}>
                 {categoria.abbrev} • {categoria.label}
               </span>
             </Tooltip>
             
             {/* Header with status icon */}
             <div className="flex items-start gap-2 mb-2">
-              <span className={`text-xl ${status.textColor} flex-shrink-0`}>{status.icon}</span>
-              <div className="font-semibold text-sm text-gray-800 line-clamp-2 leading-tight" title={projeto.nome}>
+              <span className={`text-lg sm:text-xl md:text-2xl ${status.textColor} flex-shrink-0`}>{status.icon}</span>
+              <div className="font-semibold text-xs sm:text-sm md:text-base text-gray-800 line-clamp-2 leading-tight" title={projeto.nome}>
                 {projeto.nome}
               </div>
             </div>
@@ -362,8 +313,8 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
             {/* Progress count and percentage only */}
             {totalEtapas > 0 && (
               <div className="mb-2">
-                <span className={`text-xs font-bold ${progress === 100 ? 'text-green-600' : 'text-blue-600'}`}>{progress}%</span>
-                <span className="text-[10px] text-gray-500 ml-2">
+                <span className={`text-[10px] sm:text-xs md:text-sm font-bold ${progress === 100 ? 'text-green-600' : 'text-blue-600'}`}>{progress}%</span>
+                <span className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 ml-2">
                   {etapasConcluidas} de {totalEtapas} etapas concluídas
                 </span>
               </div>
@@ -384,7 +335,7 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
                   </Avatar>
                 </Tooltip>
               )}
-              <span className="text-[11px] text-gray-600 truncate flex-1">
+              <span className="text-[10px] sm:text-[11px] md:text-xs text-gray-600 truncate flex-1">
                 {responsavel?.nome || 'Sem responsável'}
               </span>
             </div>
@@ -395,7 +346,7 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
         {size === 'expanded' && (
           <div className="flex flex-col h-full">
             {/* Category badge */}
-            <div className={`inline-flex items-center self-start px-2 py-1 rounded-lg text-xs font-bold ${categoria.bgColor} ${categoria.textColor} mb-2`}>
+            <div className={`inline-flex items-center self-start px-2 py-1 rounded-lg text-[10px] sm:text-xs md:text-sm font-bold ${categoria.bgColor} ${categoria.textColor} mb-2`}>
               <span className="mr-1.5 opacity-80">{categoria.abbrev}</span>
               <span>{categoria.label}</span>
             </div>
@@ -403,13 +354,13 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
             {/* Header */}
             <div className="flex items-start gap-2 mb-3">
               <div className={`p-1.5 rounded-lg bg-gradient-to-br ${status.gradient} text-white`}>
-                <span className="text-base">{status.icon}</span>
+                <span className="text-sm sm:text-base md:text-lg">{status.icon}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm text-gray-800 line-clamp-2 leading-tight" title={projeto.nome}>
+                <div className="font-semibold text-xs sm:text-sm md:text-base text-gray-800 line-clamp-2 leading-tight" title={projeto.nome}>
                   {projeto.nome}
                 </div>
-                <div className={`text-[10px] ${status.textColor} font-medium mt-0.5`}>
+                <div className={`text-[9px] sm:text-[10px] md:text-xs ${status.textColor} font-medium mt-0.5`}>
                   {status.label}
                 </div>
               </div>
@@ -418,15 +369,15 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
             {/* Progress count and percentage only */}
             {totalEtapas > 0 && (
               <div className="mb-3">
-                <span className={`text-sm font-bold ${progress === 100 ? 'text-green-600' : 'text-blue-600'}`}>{progress}%</span>
-                <span className="text-[10px] text-gray-500 ml-2">
+                <span className={`text-xs sm:text-sm md:text-base font-bold ${progress === 100 ? 'text-green-600' : 'text-blue-600'}`}>{progress}%</span>
+                <span className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 ml-2">
                   {etapasConcluidas} de {totalEtapas} etapas concluídas
                 </span>
               </div>
             )}
 
             {/* Info row */}
-            <div className="flex items-center gap-3 text-[10px] text-gray-500 mb-2">
+            <div className="flex items-center gap-3 text-[9px] sm:text-[10px] md:text-xs text-gray-500 mb-2">
               {projeto.data_inicio && (
                 <Tooltip title="Data de início">
                   <div className="flex items-center gap-1">
@@ -467,7 +418,7 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
                 </Avatar>
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-700 font-medium truncate">
+                <div className="text-[10px] sm:text-xs md:text-sm text-gray-700 font-medium truncate">
                   {responsavel?.nome || 'Sem responsável'}
                 </div>
               </div>

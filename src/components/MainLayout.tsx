@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { getUsuario } from '../services/usuarios';
 import type { Usuario } from '../types/usuario';
+import { useError } from '../context/ErrorContext';
 
 // Simple cache for user data
 const userCache = new Map<number, { user: Usuario; timestamp: number }>();
@@ -127,10 +128,19 @@ const MainLayout: React.FC = () => {
       }
     }
   };
+  
+  const { isLocked } = useError();
+
   return (
     <div style={{display: 'flex', flexDirection: 'row', height: '100vh', width: '100vw' }}>
-      <Sidebar />
-      <main style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <Sidebar isLocked={isLocked} />
+      <main style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        {/* Background image for entire main area */}
+        <img
+          src="/assets/marmore2.png"
+          alt="Marble background"
+          className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+        />
         <Header 
           userName={
             isLoadingUser 
@@ -145,12 +155,11 @@ const MainLayout: React.FC = () => {
           loadError={userLoadError}
           onRefreshUser={refreshUserData}
         />
-        <div style={{ flex: 1, overflow: 'auto' }}>
-            <img
-              src="/assets/marmore.png"
-              alt="Marble background"
-              className="absolute top-0 left-0 w-full h-full object-cover -z-10"
-            />
+        <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+          {/* Disable interaction overlay when locked */}
+          {isLocked && (
+            <div className="absolute inset-0 z-40 cursor-not-allowed" />
+          )}
           <Outlet />
         </div>
       </main>
