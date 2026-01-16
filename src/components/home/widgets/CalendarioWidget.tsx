@@ -112,15 +112,16 @@ const CalendarioWidget: React.FC = () => {
     }
   };
 
-  const handleAddEtapa = async (etapa: Omit<Etapa, 'id'>) => {
+  const handleAddEtapa = async (etapa: Partial<Etapa>) => {
     try {
-      const newEtapa = await createEtapa(etapa);
+      const newEtapa = await createEtapa(etapa as Omit<Etapa, 'id'>);
+      const projetoId = etapa.projeto_id;
       setProjetos(prev => prev.map(p => 
-        p.id === etapa.projeto_id 
+        p.id === projetoId 
           ? { ...p, etapas: [...(p.etapas || []), newEtapa] }
           : p
       ));
-      if (selectedProjeto?.id === etapa.projeto_id) {
+      if (selectedProjeto?.id === projetoId) {
         setSelectedProjeto(prev => prev ? { ...prev, etapas: [...(prev.etapas || []), newEtapa] } : null);
       }
     } catch (error) {
@@ -128,9 +129,10 @@ const CalendarioWidget: React.FC = () => {
     }
   };
 
-  const handleUpdateEtapa = async (id: number, updatedEtapa: Partial<Etapa>) => {
+  const handleUpdateEtapa = async (etapa: Partial<Etapa> & { id: number }) => {
     try {
-      const updated = await updateEtapa(id, updatedEtapa);
+      const { id, ...updatedData } = etapa;
+      const updated = await updateEtapa(id, updatedData);
       setProjetos(prev => prev.map(p => ({
         ...p,
         etapas: (p.etapas || []).map(e => e.id === id ? updated : e)
