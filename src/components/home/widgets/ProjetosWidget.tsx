@@ -25,8 +25,8 @@ const ProjetosWidget: React.FC = () => {
 		const [canScrollLeft, setCanScrollLeft] = useState(false);
 		const [canScrollRight, setCanScrollRight] = useState(false);
 		const [cardWidth, setCardWidth] = useState(180);
-		const [cardHeight, setCardHeight] = useState(160);
-		const [numRows, setNumRows] = useState(1);
+		const [cardHeight, setCardHeight] = useState(120);
+		const [numRows, setNumRows] = useState(2);
 		const [nome, setNome] = useState('');
 		const [status, setStatus] = useState<string[]>([]);
 		const [categoria, setCategoria] = useState<string[]>([]);
@@ -157,13 +157,15 @@ const ProjetosWidget: React.FC = () => {
 				// Calculate card height to fill container
 				if (containerRef.current) {
 					const containerHeight = containerRef.current.offsetHeight;
-					const minCardHeight = 140;
+					const minCardHeight = 120;
+					const gapHeight = 12; // Gap between rows
 					
-					// Always use 1 row and scale height to fill container
-					const availableHeight = containerHeight - 20; // Some padding
-					const newCardHeight = Math.max(minCardHeight, availableHeight);
+					// Use 2 rows and scale height to fill container
+					const rows = 2;
+					const availableHeight = containerHeight - 20 - (gapHeight * (rows - 1)); // Padding and gaps
+					const newCardHeight = Math.max(minCardHeight, availableHeight / rows);
 					
-					setNumRows(1);
+					setNumRows(rows);
 					setCardHeight(newCardHeight);
 				}
 			}
