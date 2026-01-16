@@ -60,11 +60,12 @@ const CalendarView = forwardRef<CalendarViewRef, CalendarViewProps>(({ etapas, o
   const getEventsForDate = (day: number) => {
     return etapas.filter(etapa => {
       if (!etapa.data_inicio) return false;
-      // Use UTC methods to avoid timezone-related date shifts
-      const eventDate = new Date(etapa.data_inicio);
-      return eventDate.getUTCFullYear() === year &&
-             eventDate.getUTCMonth() === month &&
-             eventDate.getUTCDate() === day;
+      // Parse date string directly to avoid timezone issues
+      const dateStr = etapa.data_inicio.split('T')[0];
+      const [eventYear, eventMonth, eventDay] = dateStr.split('-').map(Number);
+      return eventYear === year &&
+             (eventMonth - 1) === month && // months are 0-indexed
+             eventDay === day;
     });
   };
 

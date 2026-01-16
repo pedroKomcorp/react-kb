@@ -79,10 +79,10 @@ const getStatusTag = (status: string) => {
 };
 
 const priorityOptions = [
-    { value: 'Urgente', label: 'Urgente' },
-    { value: 'Alta', label: 'Alta' },
-    { value: 'Média', label: 'Média' },
-    { value: 'Baixa', label: 'Baixa' },
+    { value: 'UT', label: '🔴 Urgente' },
+    { value: 'AL', label: '🟠 Alta' },
+    { value: 'MD', label: '🟡 Média' },
+    { value: 'BA', label: '🟢 Baixa' },
 ];
 
 const categoryOptions = [

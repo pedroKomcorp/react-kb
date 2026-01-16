@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getProjetos, updateProjeto } from '../../../services/projetos';
+import { getEtapas } from '../../../services/etapas';
 import { getUsuarios } from '../../../services/usuarios';
 import type { Projeto } from '../../../types/projeto';
 import type { Usuario } from '../../../types/usuario';
@@ -67,12 +68,19 @@ export const DemandasPage: React.FC = () => {
   };
 
   const fetchData = useCallback(async () => {
-    const [projetosResponse, usuariosData] = await Promise.all([
+    const [projetosResponse, usuariosData, etapasData] = await Promise.all([
       getProjetos(),
-      getUsuarios()
+      getUsuarios(),
+      getEtapas()
     ]);
     
-    setProjetos(projetosResponse.projetos);
+    // Associate etapas with their projetos
+    const projetosWithEtapas = projetosResponse.projetos.map(projeto => ({
+      ...projeto,
+      etapas: etapasData.filter(etapa => etapa.projeto_id === projeto.id)
+    }));
+    
+    setProjetos(projetosWithEtapas);
     setUsuarios(usuariosData);
   }, []);
 

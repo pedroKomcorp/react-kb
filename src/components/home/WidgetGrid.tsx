@@ -84,6 +84,50 @@ const generateDefaultLayoutForKeys = (keys: string[]): Layout[] => {
   }));
 };
 
+// Default layouts for all breakpoints
+const DEFAULT_LAYOUTS: { [key: string]: Layout[] } = {
+  lg: [
+    { w: 4, h: 14, x: 0, y: 0, i: "projetos", minW: 3, minH: 3 },
+    { w: 8, h: 14, x: 4, y: 0, i: "calendario", minW: 3, minH: 3 }
+  ],
+  md: [
+    { w: 10, h: 3, x: 0, y: 16, i: "linha", minW: 3, minH: 3 },
+    { w: 3, h: 9, x: 7, y: 0, i: "log", minW: 3, minH: 3 },
+    { w: 3, h: 7, x: 7, y: 9, i: "eventos", minW: 3, minH: 3 },
+    { w: 2, h: 3, x: 5, y: 0, i: "humor", minW: 3, minH: 3 },
+    { w: 5, h: 3, x: 0, y: 0, i: "projetos", minW: 3, minH: 3 },
+    { w: 2, h: 10, x: 5, y: 3, i: "bloco", minW: 3, minH: 3 },
+    { w: 5, h: 9, x: 0, y: 3, i: "calendario", minW: 3, minH: 3 }
+  ],
+  sm: [
+    { w: 6, h: 3, x: 0, y: 13, i: "linha", minW: 3, minH: 3 },
+    { w: 3, h: 6, x: 3, y: 0, i: "log", minW: 3, minH: 3 },
+    { w: 3, h: 4, x: 3, y: 6, i: "eventos", minW: 3, minH: 3 },
+    { w: 3, h: 3, x: 0, y: 10, i: "humor", minW: 3, minH: 3 },
+    { w: 3, h: 3, x: 0, y: 0, i: "projetos", minW: 3, minH: 3 },
+    { w: 3, h: 3, x: 3, y: 10, i: "bloco", minW: 3, minH: 3 },
+    { w: 3, h: 7, x: 0, y: 3, i: "calendario", minW: 3, minH: 3 }
+  ],
+  xs: [
+    { w: 4, h: 3, x: 0, y: 13, i: "linha", minW: 3, minH: 3 },
+    { w: 2, h: 6, x: 2, y: 0, i: "log", minW: 3, minH: 3 },
+    { w: 2, h: 4, x: 2, y: 6, i: "eventos", minW: 3, minH: 3 },
+    { w: 2, h: 3, x: 0, y: 10, i: "humor", minW: 3, minH: 3 },
+    { w: 2, h: 3, x: 0, y: 0, i: "projetos", minW: 3, minH: 3 },
+    { w: 2, h: 3, x: 2, y: 10, i: "bloco", minW: 3, minH: 3 },
+    { w: 2, h: 7, x: 0, y: 3, i: "calendario", minW: 3, minH: 3 }
+  ],
+  xxs: [
+    { i: "linha", x: 0, y: 17, w: 2, h: 3, minW: 3, minH: 3 },
+    { i: "log", x: 0, y: 20, w: 2, h: 6, minW: 3, minH: 3 },
+    { i: "eventos", x: 0, y: 26, w: 2, h: 4, minW: 3, minH: 3 },
+    { i: "humor", x: 0, y: 14, w: 2, h: 3, minW: 3, minH: 3 },
+    { i: "projetos", x: 0, y: 4, w: 2, h: 3, minW: 3, minH: 3 },
+    { i: "bloco", x: 0, y: 11, w: 2, h: 3, minW: 3, minH: 3 },
+    { i: "calendario", x: 0, y: 7, w: 2, h: 4, minW: 3, minH: 3 }
+  ]
+};
+
 const renderWidget = (widgetType: string, title: string) => {
   const widgetContent = () => {
     switch (widgetType) {
@@ -123,14 +167,8 @@ const WidgetGrid: React.FC<WidgetGridProps> = ({ selectedKeys, allWidgets, defau
     if (savedLayouts && Object.keys(savedLayouts).length > 0) {
       setLayouts(savedLayouts);
     } else {
-      // Use provided defaultLayout or generate from basic grid
-      const initialLayouts = providedDefaultLayout || {
-        lg: generateDefaultLayoutForKeys(selectedKeys),
-        md: generateDefaultLayoutForKeys(selectedKeys),
-        sm: generateDefaultLayoutForKeys(selectedKeys),
-        xs: generateDefaultLayoutForKeys(selectedKeys),
-        xxs: generateDefaultLayoutForKeys(selectedKeys)
-      };
+      // Use provided defaultLayout or use DEFAULT_LAYOUTS
+      const initialLayouts = providedDefaultLayout || DEFAULT_LAYOUTS;
       setLayouts(initialLayouts);
     }
     setIsInitialized(true);

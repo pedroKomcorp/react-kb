@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Spin, Select } from 'antd';
-import { getEtapas } from '../../../services/etapas';
 import { getProjetos } from '../../../services/projetos';
-import CalendarView from '../../operacional/demandas/CalendarView';
-import EtapaDetailModal from '../../projetos/EtapaDetailModal';
+import { getEtapas } from '../../../services/etapas';
+import ProjetoCalendarView from '../../operacional/demandas/ProjetoCalendarView';
+import ProjetoDetailModal from '../../projetos/ProjetoDetailModal';
 import type { Etapa } from '../../../types/etapa';
 import type { Projeto } from '../../../types/projeto';
-
-// Extended etapa type that includes project info
-type EtapaWithProjeto = Etapa & { projetoNome: string; projetoId: number };
+import { getUsuarios } from '../../../services/usuarios';
+import { updateProjeto } from '../../../services/projetos';
+import { createEtapa, updateEtapa, deleteEtapa } from '../../../services/etapas';
+import type { Usuario } from '../../../types/usuario';
 
 const CalendarioWidget: React.FC = () => {
-  const [etapas, setEtapas] = useState<EtapaWithProjeto[]>([]);
-  const [filteredEtapas, setFilteredEtapas] = useState<EtapaWithProjeto[]>([]);
-  const [selectedEtapa, setSelectedEtapa] = useState<EtapaWithProjeto | null>(null);
+  const [projetos, setProjetos] = useState<Projeto[]>([]);
+  const [filteredProjetos, setFilteredProjetos] = useState<Projeto[]>([]);
+  const [selectedProjeto, setSelectedProjeto] = useState<Projeto | null>(null);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [projetoFilter, setProjetoFilter] = useState<string>('');
-  const [projetos, setProjetos] = useState<Projeto[]>([]);
 
   // Status options for filter
   const statusOptions = [
@@ -28,46 +29,40 @@ const CalendarioWidget: React.FC = () => {
     { value: 'P', label: 'Pausado' },
   ];
 
-  // Fetch user etapas and projects
+  // Fetch user projects
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        const [etapasData, { projetos: projetosData }] = await Promise.all([
-          getEtapas(),
-          getProjetos()
+        const [{ projetos: projetosData }, usuariosData, etapasData] = await Promise.all([
+          getProjetos(),
+          getUsuarios(),
+          getEtapas()
         ]);
-
-        // Create a map of projects for quick lookup
-        const projetosMap = new Map(projetosData.map(p => [p.id, p.nome]));
-        setProjetos(projetosData);
 
         // Get current user ID
         const userId = Number(localStorage.getItem('user_id'));
 
-        // Filter etapas for current user (either responsible or annexed)
-        const userEtapas = etapasData.filter(etapa => {
-          // Check if user is responsible for the project
-          const projeto = projetosData.find(p => p.id === etapa.projeto_id);
-          if (projeto && projeto.responsavel_id === userId) {
+        // Associate etapas with their projetos
+        const projetosWithEtapas = projetosData.map(projeto => ({
+          ...projeto,
+          etapas: etapasData.filter(etapa => etapa.projeto_id === projeto.id)
+        }));
+
+        // Filter projetos for current user (either responsible or annexed)
+        const userProjetos = projetosWithEtapas.filter(projeto => {
+          if (projeto.responsavel_id === userId) {
             return true;
           }
-          // Check if user is annexed to the project
-          if (projeto && projeto.anexados?.some(anexado => anexado.id === userId)) {
+          if (projeto.anexados?.some(anexado => anexado.id === userId)) {
             return true;
           }
           return false;
         });
 
-        // Add project information to etapas
-        const etapasWithProject = userEtapas.map(etapa => ({
-          ...etapa,
-          projetoNome: projetosMap.get(etapa.projeto_id) || 'Projeto Desconhecido',
-          projetoId: etapa.projeto_id
-        }));
-
-        setEtapas(etapasWithProject);
-        setFilteredEtapas(etapasWithProject);
+        setProjetos(userProjetos);
+        setFilteredProjetos(userProjetos);
+        setUsuarios(usuariosData);
       } catch (error) {
         console.error('Error fetching calendar data:', error);
       } finally {
@@ -80,18 +75,18 @@ const CalendarioWidget: React.FC = () => {
 
   // Apply filters
   useEffect(() => {
-    let filtered = etapas;
+    let filtered = projetos;
 
     if (statusFilter) {
-      filtered = filtered.filter(etapa => etapa.status === statusFilter);
+      filtered = filtered.filter(projeto => projeto.status === statusFilter);
     }
 
     if (projetoFilter) {
-      filtered = filtered.filter(etapa => etapa.projeto_id.toString() === projetoFilter);
+      filtered = filtered.filter(projeto => projeto.id.toString() === projetoFilter);
     }
 
-    setFilteredEtapas(filtered);
-  }, [etapas, statusFilter, projetoFilter]);
+    setFilteredProjetos(filtered);
+  }, [projetos, statusFilter, projetoFilter]);
 
   // Project options for filter
   const projetoOptions = [
@@ -102,24 +97,70 @@ const CalendarioWidget: React.FC = () => {
     }))
   ];
 
-  const handleEtapaClick = (etapa: Etapa) => {
-    const found = etapas.find(e => e.id === etapa.id);
-    if (found) {
-      setSelectedEtapa(found);
+  const handleProjetoClick = (projeto: Projeto) => {
+    setSelectedProjeto(projeto);
+  };
+
+  const handleUpdateProjeto = async (updatedProjeto: Partial<Projeto>) => {
+    if (!selectedProjeto) return;
+    try {
+      const updated = await updateProjeto(selectedProjeto.id, updatedProjeto);
+      setProjetos(prev => prev.map(p => p.id === updated.id ? updated : p));
+      setSelectedProjeto(updated);
+    } catch (error) {
+      console.error('Error updating projeto:', error);
     }
   };
 
-  const handleSaveEtapa = async (updatedEtapa: Partial<Etapa> & { id: number }) => {
+  const handleAddEtapa = async (etapa: Omit<Etapa, 'id'>) => {
     try {
-      // Update etapa in the list
-      setEtapas(prevEtapas => 
-        prevEtapas.map(e => 
-          e.id === updatedEtapa.id ? { ...e, ...updatedEtapa } : e
-        )
-      );
-      setSelectedEtapa(null);
+      const newEtapa = await createEtapa(etapa);
+      setProjetos(prev => prev.map(p => 
+        p.id === etapa.projeto_id 
+          ? { ...p, etapas: [...(p.etapas || []), newEtapa] }
+          : p
+      ));
+      if (selectedProjeto?.id === etapa.projeto_id) {
+        setSelectedProjeto(prev => prev ? { ...prev, etapas: [...(prev.etapas || []), newEtapa] } : null);
+      }
     } catch (error) {
-      console.error('Error saving etapa:', error);
+      console.error('Error adding etapa:', error);
+    }
+  };
+
+  const handleUpdateEtapa = async (id: number, updatedEtapa: Partial<Etapa>) => {
+    try {
+      const updated = await updateEtapa(id, updatedEtapa);
+      setProjetos(prev => prev.map(p => ({
+        ...p,
+        etapas: (p.etapas || []).map(e => e.id === id ? updated : e)
+      })));
+      if (selectedProjeto) {
+        setSelectedProjeto(prev => prev ? {
+          ...prev,
+          etapas: (prev.etapas || []).map(e => e.id === id ? updated : e)
+        } : null);
+      }
+    } catch (error) {
+      console.error('Error updating etapa:', error);
+    }
+  };
+
+  const handleDeleteEtapa = async (id: number) => {
+    try {
+      await deleteEtapa(id);
+      setProjetos(prev => prev.map(p => ({
+        ...p,
+        etapas: (p.etapas || []).filter(e => e.id !== id)
+      })));
+      if (selectedProjeto) {
+        setSelectedProjeto(prev => prev ? {
+          ...prev,
+          etapas: (prev.etapas || []).filter(e => e.id !== id)
+        } : null);
+      }
+    } catch (error) {
+      console.error('Error deleting etapa:', error);
     }
   };
 
@@ -155,30 +196,35 @@ const CalendarioWidget: React.FC = () => {
 
       {/* Calendar */}
       <div className="flex-1 overflow-hidden">
-        {filteredEtapas.length === 0 ? (
+        {filteredProjetos.length === 0 ? (
           <div className="w-full h-full flex items-center justify-center text-gray-500">
             <div className="text-center">
               <div className="text-2xl mb-2">📅</div>
-              <div>Nenhuma etapa encontrada</div>
+              <div>Nenhum projeto encontrado</div>
               <div className="text-sm mt-1 opacity-70">
-                Ajuste os filtros ou verifique se há etapas nos seus projetos
+                Ajuste os filtros ou verifique se há projetos atribuídos a você
               </div>
             </div>
           </div>
         ) : (
-          <CalendarView
-            etapas={filteredEtapas}
-            onEtapaClick={handleEtapaClick}
+          <ProjetoCalendarView
+            projetos={filteredProjetos}
+            onProjetoClick={handleProjetoClick}
           />
         )}
       </div>
 
-      {/* Etapa Detail Modal */}
-      <EtapaDetailModal
-        etapa={selectedEtapa}
-        open={!!selectedEtapa}
-        onClose={() => setSelectedEtapa(null)}
-        onUpdateEtapa={handleSaveEtapa}
+      {/* Projeto Detail Modal */}
+      <ProjetoDetailModal
+        projeto={selectedProjeto}
+        usuarios={usuarios}
+        open={!!selectedProjeto}
+        onClose={() => setSelectedProjeto(null)}
+        onAddEtapa={handleAddEtapa}
+        onSelectEtapa={() => {}}
+        onUpdateProjeto={handleUpdateProjeto}
+        onUpdateEtapa={handleUpdateEtapa}
+        onDeleteEtapa={handleDeleteEtapa}
       />
     </div>
   );
