@@ -131,16 +131,39 @@ const CreditoCreateModal: React.FC<CreditoCreateModalProps> = ({
                 }
                 rules={[
                   { required: true, message: 'Por favor, insira o saldo inicial' },
-                  { type: 'number', min: 0.01, message: 'O saldo deve ser maior que zero' }
+                  { 
+                    validator: (_, value) => {
+                      if (!value || parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) > 0) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(new Error('O valor deve ser maior que zero'));
+                    }
+                  }
                 ]}
               >
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
-                  placeholder="0.00"
-                  formatter={formatInputCurrency}
-                  parser={parseInputCurrency}
-                  precision={2}
-                  prefix="R$"
+                  placeholder="R$ 0,00"
+                  onChange={(e) => {
+                    const input = e.target.value;
+                    let value = input.replace(/\D/g, '');
+                    
+                    if (value === '') {
+                      form.setFieldValue('saldo_inicial', '');
+                      return value;
+                    }
+                    
+                    // Convert to number and format
+                    const numValue = parseInt(value) / 100;
+                    const formatted = numValue.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    });
+                    
+                    form.setFieldValue('saldo_inicial', formatted);
+                  }}
                 />
               </Form.Item>
             </div>
