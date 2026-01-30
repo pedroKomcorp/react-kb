@@ -3,9 +3,5 @@
 .marble-bg {
   position: relative;
   min-height: 100vh;
-  background-color: #05060a;
-  background-image: url("/assets/marmore3.webp");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
+  background: #05060a url("/assets/marmore3.webp") center / cover no-repeat;
 }
