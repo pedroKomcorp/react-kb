@@ -135,7 +135,6 @@ const MainLayout: React.FC = () => {
     <div style={{display: 'flex', flexDirection: 'row', height: '100vh', width: '100vw' }}>
       <Sidebar isLocked={isLocked} />
       <main
-        className="marble-bg"
         style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}
       >
         <Header 

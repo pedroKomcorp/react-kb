@@ -74,7 +74,7 @@ const LoginPage: React.FC = () => {
         <div className="text-center mb-6">
           <a href="https://kombusiness.com.br/" target="_blank" rel="noopener noreferrer">
             <img
-              src="/assets/logo-kb-escuro.png"
+              src="/assets/logo-kb-escuro.webp"
               alt="Kom Business Logo"
               className="w-auto h-16 mx-auto cursor-pointer transition-transform hover:scale-105"
             />
