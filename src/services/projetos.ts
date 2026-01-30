@@ -6,10 +6,11 @@ export const getProjetos = async (
   params?: { offset?: number; limit?: number },
   token?: string
 ) => {
+  const queryParams = { ...(params || {}), limit: params?.limit ?? 1000 };
   const res = await api.get<{ projetos: Projeto[]; total: number }>(
     '/projetos/',
     {
-      params,
+      params: queryParams,
       ...(token && authHeaders(token)),
     }
   );
