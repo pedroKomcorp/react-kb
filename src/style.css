@@ -1,1 +1,100 @@
 @import "tailwindcss";
+
+.marble-bg {
+  --base: #05060a;
+  --vein: rgba(235, 242, 255, 0.12);
+  --vein-strong: rgba(235, 242, 255, 0.18);
+  --gold: rgba(176, 138, 74, 0.10);
+  --shadow-angle: 150deg;
+  --shadow-soft: 14px;
+  --shadow-opacity: 0.85;
+  position: relative;
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 800px at 18% 22%, rgba(255, 255, 255, 0.05), transparent 60%),
+    radial-gradient(1000px 700px at 85% 75%, rgba(255, 255, 255, 0.03), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%, rgba(0, 0, 0, 0.40)),
+    var(--base);
+  overflow: hidden;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.65);
+  isolation: isolate;
+}
+
+.marble-bg::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    linear-gradient(118deg,
+      transparent 0 33%,
+      var(--vein-strong) 33% 33.22%,
+      transparent 33.22% 58%,
+      var(--vein) 58% 58.14%,
+      transparent 58.14% 100%),
+    linear-gradient(32deg,
+      transparent 0 41%,
+      var(--vein) 41% 41.18%,
+      transparent 41.18% 66%,
+      var(--vein-strong) 66% 66.22%,
+      transparent 66.22% 100%),
+    linear-gradient(165deg,
+      transparent 0 52%,
+      var(--vein) 52% 52.12%,
+      transparent 52.12% 100%),
+    radial-gradient(900px 520px at 30% 55%, rgba(255, 255, 255, 0.045), transparent 60%),
+    radial-gradient(700px 420px at 70% 40%, rgba(255, 255, 255, 0.035), transparent 62%),
+    linear-gradient(122deg,
+      transparent 0 72%,
+      var(--gold) 72% 72.18%,
+      transparent 72.18% 100%),
+    linear-gradient(18deg,
+      transparent 0 61%,
+      var(--gold) 61% 61.14%,
+      transparent 61.14% 100%);
+  background-size:
+    260% 260%,
+    240% 240%,
+    220% 220%,
+    180% 180%,
+    170% 170%,
+    240% 240%,
+    220% 220%;
+  background-position:
+    10% 20%,
+    70% 10%,
+    40% 70%,
+    20% 30%,
+    80% 60%,
+    65% 40%,
+    35% 55%;
+  opacity: 0.95;
+  mix-blend-mode: screen;
+  filter: blur(0.25px);
+  transform: rotate(-2deg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.marble-bg::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    repeating-linear-gradient(var(--shadow-angle),
+      rgba(0, 0, 0, 0.72) 0px,
+      rgba(0, 0, 0, 0.72) 78px,
+      rgba(0, 0, 0, 0.18) 150px,
+      rgba(0, 0, 0, 0.18) 240px
+    );
+  opacity: var(--shadow-opacity);
+  mix-blend-mode: multiply;
+  filter: blur(var(--shadow-soft));
+  transform: scale(1.15);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.marble-bg > * {
+  position: relative;
+  z-index: 1;
+}

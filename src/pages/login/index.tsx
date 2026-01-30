@@ -63,13 +63,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="relative w-screen h-screen flex items-center justify-center font-sans">
-      {/* Background Image */}
-      <img
-        src="/assets/marmore3.png"
-        alt="Marble background"
-        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
-      />
+    <div className="marble-bg w-screen h-screen flex items-center justify-center font-sans">
 
       {/* Login Card Container */}
       <div

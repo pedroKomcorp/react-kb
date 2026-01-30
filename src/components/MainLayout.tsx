@@ -134,13 +134,10 @@ const MainLayout: React.FC = () => {
   return (
     <div style={{display: 'flex', flexDirection: 'row', height: '100vh', width: '100vw' }}>
       <Sidebar isLocked={isLocked} />
-      <main style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        {/* Background image for entire main area */}
-        <img
-          src="/assets/marmore2.png"
-          alt="Marble background"
-          className="absolute top-0 left-0 w-full h-full object-cover -z-10"
-        />
+      <main
+        className="marble-bg"
+        style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}
+      >
         <Header 
           userName={
             isLoadingUser 

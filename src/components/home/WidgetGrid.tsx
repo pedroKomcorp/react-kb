@@ -1,16 +1,7 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, Suspense, lazy } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import type { Layout } from 'react-grid-layout';
 import Widget from './Widget';
-
-// Import widget components
-import ProjetosWidget from './widgets/ProjetosWidget';
-import CalendarioWidget from './widgets/CalendarioWidget';
-import BlocoNotasWidget from './widgets/BlocoNotasWidget';
-import LinhaTempoWidget from './widgets/LinhaTempoWidget';
-import LogWidget from './widgets/LogWidget';
-import EventosWidget from './widgets/EventosWidget';
-import HumorWidget from './widgets/HumorWidget';
 
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -18,6 +9,22 @@ import './responsive-widgets.css';
 import './widget-grid.css';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
+
+const widgetComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
+  projetos: lazy(() => import('./widgets/ProjetosWidget')),
+  calendario: lazy(() => import('./widgets/CalendarioWidget')),
+  bloco: lazy(() => import('./widgets/BlocoNotasWidget')),
+  linha: lazy(() => import('./widgets/LinhaTempoWidget')),
+  log: lazy(() => import('./widgets/LogWidget')),
+  eventos: lazy(() => import('./widgets/EventosWidget')),
+  humor: lazy(() => import('./widgets/HumorWidget')),
+};
+
+const widgetFallback = (
+  <div className="w-full h-full flex items-center justify-center text-sm text-gray-500">
+    Carregando...
+  </div>
+);
 
 // Constants for localStorage
 const LAYOUT_STORAGE_KEY = 'widgetGrid_layouts';
@@ -129,30 +136,16 @@ const DEFAULT_LAYOUTS: { [key: string]: Layout[] } = {
 };
 
 const renderWidget = (widgetType: string, title: string) => {
-  const widgetContent = () => {
-    switch (widgetType) {
-      case 'projetos':
-        return <ProjetosWidget />;
-      case 'calendario':
-        return <CalendarioWidget />;
-      case 'bloco':
-        return <BlocoNotasWidget />;
-      case 'linha':
-        return <LinhaTempoWidget />;
-      case 'log':
-        return <LogWidget />;
-      case 'eventos':
-        return <EventosWidget />;
-      case 'humor':
-        return <HumorWidget />;
-      default:
-        return <div>Widget não encontrado</div>;
-    }
-  };
+  const WidgetComponent = widgetComponents[widgetType];
+  if (!WidgetComponent) {
+    return <div>Widget não encontrado</div>;
+  }
 
   return (
     <Widget title={title}>
-      {widgetContent()}
+      <Suspense fallback={widgetFallback}>
+        <WidgetComponent />
+      </Suspense>
     </Widget>
   );
 };

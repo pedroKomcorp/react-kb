@@ -7,7 +7,8 @@
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "analyze": "vite build --mode analyze"
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
@@ -16,10 +17,8 @@
     "antd": "^5.27.1",
     "axios": "^1.11.0",
     "react": "^19.1.1",
-    "react-calendar": "^6.0.0",
     "react-dom": "^19.1.1",
     "react-grid-layout": "^1.5.2",
-    "react-rnd": "^10.5.2",
     "react-router": "^7.8.2",
     "tailwindcss": "^4.1.12"
   },
@@ -35,6 +34,7 @@
     "globals": "^16.3.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vite-bundle-visualizer": "^1.0.4"
   }
 }

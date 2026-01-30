@@ -1,15 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Spin, Select } from 'antd';
 import { getProjetos } from '../../../services/projetos';
 import { getEtapas } from '../../../services/etapas';
-import ProjetoCalendarView from '../../operacional/demandas/ProjetoCalendarView';
-import ProjetoDetailModal from '../../projetos/ProjetoDetailModal';
 import type { Etapa } from '../../../types/etapa';
 import type { Projeto } from '../../../types/projeto';
 import { getUsuarios } from '../../../services/usuarios';
 import { updateProjeto } from '../../../services/projetos';
 import { createEtapa, updateEtapa, deleteEtapa } from '../../../services/etapas';
 import type { Usuario } from '../../../types/usuario';
+
+const ProjetoCalendarView = lazy(() => import('../../operacional/demandas/ProjetoCalendarView'));
+const ProjetoDetailModal = lazy(() => import('../../projetos/ProjetoDetailModal'));
+
+const calendarFallback = (
+  <div className="w-full h-full flex items-center justify-center">
+    <Spin size="large" />
+  </div>
+);
 
 const CalendarioWidget: React.FC = () => {
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -209,25 +216,29 @@ const CalendarioWidget: React.FC = () => {
             </div>
           </div>
         ) : (
-          <ProjetoCalendarView
-            projetos={filteredProjetos}
-            onProjetoClick={handleProjetoClick}
-          />
+          <Suspense fallback={calendarFallback}>
+            <ProjetoCalendarView
+              projetos={filteredProjetos}
+              onProjetoClick={handleProjetoClick}
+            />
+          </Suspense>
         )}
       </div>
 
       {/* Projeto Detail Modal */}
-      <ProjetoDetailModal
-        projeto={selectedProjeto}
-        usuarios={usuarios}
-        open={!!selectedProjeto}
-        onClose={() => setSelectedProjeto(null)}
-        onAddEtapa={handleAddEtapa}
-        onSelectEtapa={() => {}}
-        onUpdateProjeto={handleUpdateProjeto}
-        onUpdateEtapa={handleUpdateEtapa}
-        onDeleteEtapa={handleDeleteEtapa}
-      />
+      <Suspense fallback={null}>
+        <ProjetoDetailModal
+          projeto={selectedProjeto}
+          usuarios={usuarios}
+          open={!!selectedProjeto}
+          onClose={() => setSelectedProjeto(null)}
+          onAddEtapa={handleAddEtapa}
+          onSelectEtapa={() => {}}
+          onUpdateProjeto={handleUpdateProjeto}
+          onUpdateEtapa={handleUpdateEtapa}
+          onDeleteEtapa={handleDeleteEtapa}
+        />
+      </Suspense>
     </div>
   );
 };

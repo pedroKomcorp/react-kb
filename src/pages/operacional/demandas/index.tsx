@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { getProjetos, updateProjeto } from '../../../services/projetos';
 import { getEtapas } from '../../../services/etapas';
 import { getUsuarios } from '../../../services/usuarios';
@@ -6,9 +6,17 @@ import type { Projeto } from '../../../types/projeto';
 import type { Usuario } from '../../../types/usuario';
 import type { Etapa } from '../../../types/etapa';
 import { createEtapa, updateEtapa, deleteEtapa } from '../../../services/etapas';
-import ProjetoDetailModal from '../../../components/projetos/ProjetoDetailModal';
-import ProjetoKanbanView from '../../../components/operacional/demandas/ProjetoKanbanView';
-import ProjetoCalendarView, { type ProjetoCalendarViewRef } from '../../../components/operacional/demandas/ProjetoCalendarView';
+import type { ProjetoCalendarViewRef } from '../../../components/operacional/demandas/ProjetoCalendarView';
+
+const ProjetoDetailModal = lazy(() => import('../../../components/projetos/ProjetoDetailModal'));
+const ProjetoKanbanView = lazy(() => import('../../../components/operacional/demandas/ProjetoKanbanView'));
+const ProjetoCalendarView = lazy(() => import('../../../components/operacional/demandas/ProjetoCalendarView'));
+
+const viewFallback = (
+  <div className="w-full h-full flex items-center justify-center text-gray-500">
+    Carregando...
+  </div>
+);
 
 export const DemandasPage: React.FC = () => {
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -314,14 +322,16 @@ export const DemandasPage: React.FC = () => {
               className="flex flex-col h-full overflow-hidden mr-2"
               style={{ width: showCalendar ? `${leftWidth}%` : '100%' }}
             >
-              <ProjetoKanbanView
-                projetos={filteredProjetos}
-                onProjetoClick={(projeto) => {
-                  const found = projetos.find(p => p.id === projeto.id);
-                  if (found) setSelectedProjeto(found);
-                }}
-                onUpdateProjetoStatus={handleUpdateProjetoStatus}
-              />
+              <Suspense fallback={viewFallback}>
+                <ProjetoKanbanView
+                  projetos={filteredProjetos}
+                  onProjetoClick={(projeto) => {
+                    const found = projetos.find(p => p.id === projeto.id);
+                    if (found) setSelectedProjeto(found);
+                  }}
+                  onUpdateProjetoStatus={handleUpdateProjetoStatus}
+                />
+              </Suspense>
             </div>
           )}
           
@@ -341,29 +351,33 @@ export const DemandasPage: React.FC = () => {
               className="flex flex-col h-full overflow-hidden ml-2"
               style={{ width: showKanban ? `${100 - leftWidth}%` : '100%' }}
             >
-              <ProjetoCalendarView
-                ref={calendarRef}
-                projetos={filteredProjetos}
-                onProjetoClick={(projeto) => {
-                  const found = projetos.find(p => p.id === projeto.id);
-                  if (found) setSelectedProjeto(found);
-                }}
-              />
+              <Suspense fallback={viewFallback}>
+                <ProjetoCalendarView
+                  ref={calendarRef}
+                  projetos={filteredProjetos}
+                  onProjetoClick={(projeto) => {
+                    const found = projetos.find(p => p.id === projeto.id);
+                    if (found) setSelectedProjeto(found);
+                  }}
+                />
+              </Suspense>
             </div>
           )}
         </main>
 
-        <ProjetoDetailModal
-          projeto={selectedProjeto}
-          usuarios={usuarios}
-          open={!!selectedProjeto}
-          onClose={() => setSelectedProjeto(null)}
-          onAddEtapa={handleAddEtapa}
-          onSelectEtapa={() => {}}
-          onUpdateProjeto={handleUpdateProjeto}
-          onUpdateEtapa={handleUpdateEtapa}
-          onDeleteEtapa={handleDeleteEtapa}
-        />
+        <Suspense fallback={null}>
+          <ProjetoDetailModal
+            projeto={selectedProjeto}
+            usuarios={usuarios}
+            open={!!selectedProjeto}
+            onClose={() => setSelectedProjeto(null)}
+            onAddEtapa={handleAddEtapa}
+            onSelectEtapa={() => {}}
+            onUpdateProjeto={handleUpdateProjeto}
+            onUpdateEtapa={handleUpdateEtapa}
+            onDeleteEtapa={handleDeleteEtapa}
+          />
+        </Suspense>
       </div>
     </div>
   );
