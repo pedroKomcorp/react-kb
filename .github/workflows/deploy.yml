@@ -1,11 +1,13 @@
 on:
   push:
     branches:
-      - prod  # change if you use another branch
+      - master  # change if you use another branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
 
     steps:
       - name: Checkout code
@@ -21,8 +23,9 @@ jobs:
           tty: true
           script: |
             cd /var/www/react-kb
-            git fetch origin prod
-            git reset --hard origin/prod
+            branch="${DEPLOY_BRANCH:-master}"
+            git fetch origin "$branch"
+            git reset --hard "origin/$branch"
             npm install
             npm run build
             sudo systemctl reload nginx
