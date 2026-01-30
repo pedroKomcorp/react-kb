@@ -132,7 +132,10 @@ const MainLayout: React.FC = () => {
   const { isLocked } = useError();
 
   return (
-    <div style={{display: 'flex', flexDirection: 'row', height: '100vh', width: '100vw' }}>
+    <div
+      className="marble-bg"
+      style={{ display: 'flex', flexDirection: 'row', height: '100vh', width: '100vw' }}
+    >
       <Sidebar isLocked={isLocked} />
       <main
         style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}
