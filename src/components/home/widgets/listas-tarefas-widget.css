@@ -1,0 +1,121 @@
+.listas-tarefas-widget,
+.listas-tarefas-widget .ant-typography,
+.listas-tarefas-widget .ant-empty-description {
+  color: #fff;
+}
+
+.listas-tarefas-widget .ant-btn {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.listas-tarefas-widget .ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous) {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.listas-tarefas-widget .ant-btn.ant-btn-text {
+  border-color: transparent;
+  background: transparent;
+}
+
+.listas-tarefas-widget .ant-btn.ant-btn-primary,
+.listas-tarefas-widget .ant-btn.ant-btn-dangerous {
+  color: #fff;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn:not(:disabled) {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #fff !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn:not(:disabled):hover,
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn:not(:disabled):focus {
+  background: #15803d !important;
+  border-color: #15803d !important;
+  color: #fff !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.ant-btn-text:not(:disabled) {
+  border-color: #16a34a !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.listas-tarefas-edit-btn:not(:disabled) {
+  background: #d97706 !important;
+  border-color: #d97706 !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.listas-tarefas-edit-btn:not(:disabled):hover,
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.listas-tarefas-edit-btn:not(:disabled):focus {
+  background: #b45309 !important;
+  border-color: #b45309 !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.ant-btn-text.listas-tarefas-edit-btn:not(:disabled) {
+  border-color: #d97706 !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.listas-tarefas-delete-btn:not(:disabled) {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.listas-tarefas-delete-btn:not(:disabled):hover,
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.listas-tarefas-delete-btn:not(:disabled):focus {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn.ant-btn-text.listas-tarefas-delete-btn:not(:disabled) {
+  border-color: #dc2626 !important;
+}
+
+.listas-tarefas-widget .ant-btn.listas-tarefas-action-btn:not(:disabled) .anticon {
+  color: #fff !important;
+}
+
+.listas-tarefas-widget .ant-input {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.listas-tarefas-widget .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.listas-tarefas-widget .ant-select .ant-select-selector {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.listas-tarefas-widget .ant-select .ant-select-selection-item,
+.listas-tarefas-widget .ant-select .ant-select-selection-placeholder,
+.listas-tarefas-widget .ant-select .ant-select-arrow {
+  color: #fff !important;
+}
+
+.listas-tarefas-select-dropdown.ant-select-dropdown {
+  background: #1f1e27;
+}
+
+.listas-tarefas-select-dropdown .ant-select-item {
+  color: #fff;
+}
+
+.listas-tarefas-select-dropdown .ant-select-item-option-active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.listas-tarefas-select-dropdown .ant-select-item-option-selected {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.listas-tarefas-popconfirm .ant-popover-inner {
+  background: #1f1e27;
+}
+
+.listas-tarefas-popconfirm .ant-popconfirm-title,
+.listas-tarefas-popconfirm .ant-popconfirm-description {
+  color: #fff;
+}
