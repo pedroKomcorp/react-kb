@@ -1,11 +1,14 @@
 // src/components/MainLayout.tsx
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router';
+import { Outlet, useLocation } from 'react-router';
 import Sidebar from './Sidebar';
-import Header from './Header';
+import RightRail from './RightRail';
 import { getUsuario } from '../services/usuarios';
 import type { Usuario } from '../types/usuario';
 import { useError } from '../context/ErrorContext';
+import { setGlobalErrorHandler, setAuthLockHandler } from '../services/api';
+import { HomeWidgetsProvider } from '../context/HomeWidgetsContext';
+import './home/scrollbar-hide.css';
 
 // Simple cache for user data
 const userCache = new Map<number, { user: Usuario; timestamp: number }>();
@@ -39,6 +42,8 @@ if (typeof window !== 'undefined') {
 }
 
 const MainLayout: React.FC = () => {
+  const location = useLocation();
+  const isHomeRoute = location.pathname.startsWith('/home');
   const [currentUser, setCurrentUser] = useState<Usuario>({
     id: 0,
     nome: "Usuário",
@@ -129,7 +134,12 @@ const MainLayout: React.FC = () => {
     }
   };
   
-  const { isLocked } = useError();
+  const { isLocked, addError, setAuthLocked } = useError();
+
+  useEffect(() => {
+    setGlobalErrorHandler(addError);
+    setAuthLockHandler(setAuthLocked);
+  }, [addError, setAuthLocked]);
 
   return (
     <div
@@ -138,29 +148,34 @@ const MainLayout: React.FC = () => {
     >
       <Sidebar isLocked={isLocked} />
       <main
-        style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}
+        style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'row' }}
       >
-        <Header 
-          userName={
-            isLoadingUser 
-              ? "Carregando..." 
-              : userLoadError 
-                ? "Erro ao carregar"
-                : (currentUser?.nome || "Usuário")
-          }
-          currentUser={currentUser}
-          onUpdateProfile={handleUpdateProfile}
-          isLoading={isLoadingUser}
-          loadError={userLoadError}
-          onRefreshUser={refreshUserData}
-        />
-        <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
-          {/* Disable interaction overlay when locked */}
-          {isLocked && (
-            <div className="absolute inset-0 z-40 cursor-not-allowed" />
-          )}
-          <Outlet />
-        </div>
+        <HomeWidgetsProvider>
+          <div
+            className={isHomeRoute ? 'scrollbar-hide' : undefined}
+            style={{ flex: 1, overflow: 'auto', position: 'relative', minHeight: 0, minWidth: 0 }}
+          >
+            {/* Disable interaction overlay when locked */}
+            {isLocked && (
+              <div className="absolute inset-0 z-40 cursor-not-allowed" />
+            )}
+            <Outlet />
+          </div>
+          <RightRail
+            userName={
+              isLoadingUser
+                ? 'Carregando...'
+                : userLoadError
+                  ? 'Erro ao carregar'
+                  : (currentUser?.nome || 'Usuário')
+            }
+            currentUser={currentUser}
+            onUpdateProfile={handleUpdateProfile}
+            isLoading={isLoadingUser}
+            loadError={userLoadError}
+            onRefreshUser={refreshUserData}
+          />
+        </HomeWidgetsProvider>
       </main>
     </div>
   );
