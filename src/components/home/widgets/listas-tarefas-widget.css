@@ -111,11 +111,15 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+.listas-tarefas-popconfirm {
+  --antd-arrow-background-color: #fff;
+}
+
 .listas-tarefas-popconfirm .ant-popover-inner {
-  background: #1f1e27;
+  background: #fff;
 }
 
 .listas-tarefas-popconfirm .ant-popconfirm-title,
 .listas-tarefas-popconfirm .ant-popconfirm-description {
-  color: #fff;
+  color: #1f1e27;
 }
