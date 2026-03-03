@@ -18,6 +18,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import {
   clearConcluidosListaTarefas,

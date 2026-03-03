@@ -2,17 +2,15 @@
 .widget-grid-container {
   height: 100%;
   width: 100%;
-  /* Add top margin to account for header height */
   margin-top: 0;
-  /* Ensure grid doesn't overlap with fixed header */
   position: relative;
   z-index: 1;
 }
 
 .react-grid-layout {
   position: relative;
-  /* Ensure the grid layout has proper boundaries */
-  min-height: calc(100vh - 80px); /* Account for header height */
+  min-height: 100%;
+  height: 100%;
 }
 
 .react-grid-item {
