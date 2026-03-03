@@ -5,16 +5,3 @@
   min-height: 100vh;
   background: #05060a url("/assets/marmore3.webp") center / cover no-repeat;
 }
-
-.ant-popconfirm {
-  --antd-arrow-background-color: #fff;
-}
-
-.ant-popconfirm .ant-popover-inner {
-  background: #fff !important;
-}
-
-.ant-popconfirm .ant-popconfirm-title,
-.ant-popconfirm .ant-popconfirm-description {
-  color: #1f1e27 !important;
-}
