@@ -529,7 +529,7 @@ const ListasTarefasWidget: React.FC = () => {
                             />
                           )}
                           <Popconfirm
-                            className='bg-white'
+                            overlayClassName="listas-tarefas-popconfirm"
                             title="Excluir item"
                             description="Deseja remover este item?"
                             okText="Excluir"
