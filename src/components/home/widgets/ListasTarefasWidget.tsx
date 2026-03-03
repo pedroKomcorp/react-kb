@@ -18,7 +18,6 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
-  ReloadOutlined,
 } from '@ant-design/icons';
 import {
   clearConcluidosListaTarefas,
@@ -36,6 +35,7 @@ import type {
   ItemListaTarefas,
   ListaTarefas,
 } from '../../../types/listasTarefas';
+import './listas-tarefas-widget.css';
 
 const { Text } = Typography;
 
@@ -332,227 +332,231 @@ const ListasTarefasWidget: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col responsive-padding gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <Text strong>Listas de Tarefas</Text>
-        <Space size={4}>
-          <Button
-            type="text"
-            size="small"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              void loadListas();
-            }}
-            disabled={isSaving}
-          />
-          <Button
-            type="primary"
-            size="small"
-            icon={<PlusOutlined />}
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            Nova lista
-          </Button>
-        </Space>
-      </div>
-
-      {loadingListas ? (
-        <div className="flex-1 flex items-center justify-center">
-          <Spin />
-        </div>
-      ) : !listas.length ? (
-        <div className="flex-1 flex items-center justify-center">
-          <Empty
-            description="Nenhuma lista criada"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          >
-            <Button type="primary" onClick={() => setIsCreateModalOpen(true)}>
-              Criar primeira lista
-            </Button>
-          </Empty>
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              className="min-w-[220px] flex-1"
-              value={listaAtivaId ?? undefined}
-              onChange={(value) => setListaAtivaId(value)}
-              options={listas.map((lista) => ({ value: lista.id, label: lista.titulo }))}
-            />
-            <Button
-              size="small"
-              icon={<EditOutlined />}
-              onClick={openRenameModal}
-              disabled={!listaAtiva}
+    <div className="listas-tarefas-widget w-full h-full min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col gap-3">
+        {loadingListas ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Spin />
+          </div>
+        ) : !listas.length ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Empty
+              description={<span className="text-white/75">Nenhuma lista criada</span>}
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
             >
-              Renomear
-            </Button>
-            <Popconfirm
-              title="Excluir lista"
-              description="Essa ação remove a lista e todos os itens."
-              okText="Excluir"
-              cancelText="Cancelar"
-              onConfirm={() => {
-                void handleDeleteLista();
-              }}
-            >
-              <Button size="small" danger icon={<DeleteOutlined />} disabled={!listaAtiva}>
-                Excluir
+              <Button
+                type="primary"
+                className="listas-tarefas-action-btn"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                Criar primeira lista
               </Button>
-            </Popconfirm>
+            </Empty>
           </div>
-
-          <div className="flex items-center justify-between">
-            <Text type="secondary">
-              {completedCount}/{itens.length} concluídos
-            </Text>
-            <Popconfirm
-              title="Limpar concluídos"
-              description="Remover todos os itens concluídos da lista?"
-              okText="Limpar"
-              cancelText="Cancelar"
-              onConfirm={() => {
-                void handleClearCompleted();
-              }}
-              disabled={completedCount === 0}
-            >
-              <Button size="small" disabled={completedCount === 0 || isSaving}>
-                Limpar concluídos
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                className="min-w-[220px] flex-1"
+                popupClassName="listas-tarefas-select-dropdown"
+                value={listaAtivaId ?? undefined}
+                onChange={(value) => setListaAtivaId(value)}
+                options={listas.map((lista) => ({ value: lista.id, label: lista.titulo }))}
+              />
+              <Button
+                type="primary"
+                size="small"
+                className="listas-tarefas-action-btn"
+                icon={<PlusOutlined />}
+                onClick={() => setIsCreateModalOpen(true)}
+              >
               </Button>
-            </Popconfirm>
-          </div>
+              <Button
+                size="small"
+                className="listas-tarefas-action-btn listas-tarefas-edit-btn"
+                icon={<EditOutlined />}
+                onClick={openRenameModal}
+                disabled={!listaAtiva}
+              >
+              </Button>
+              <Popconfirm
+                overlayClassName="listas-tarefas-popconfirm"
+                title="Excluir lista"
+                description="Essa ação remove a lista e todos os itens."
+                okText="Excluir"
+                cancelText="Cancelar"
+                onConfirm={() => {
+                  void handleDeleteLista();
+                }}
+              >
+                <Button
+                  size="small"
+                  className="listas-tarefas-action-btn listas-tarefas-delete-btn"
+                  danger
+                  icon={<DeleteOutlined />}
+                  disabled={!listaAtiva}
+                >
+                  
+                </Button>
+              </Popconfirm>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Input
-              value={newItemConteudo}
-              placeholder="Adicionar novo item"
-              onChange={(event) => setNewItemConteudo(event.target.value)}
-              onPressEnter={() => {
-                void handleCreateItem();
-              }}
-              disabled={!listaAtivaId || isSaving}
-            />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                void handleCreateItem();
-              }}
-              disabled={!listaAtivaId || !newItemConteudo.trim() || isSaving}
-            >
-              Adicionar
-            </Button>
-          </div>
+            <div className="flex items-center justify-between">
+             
+              <Popconfirm
+                overlayClassName="listas-tarefas-popconfirm"
+                title="Limpar concluídos"
+                description="Remover todos os itens concluídos da lista?"
+                okText="Limpar"
+                cancelText="Cancelar"
+                onConfirm={() => {
+                  void handleClearCompleted();
+                }}
+                disabled={completedCount === 0}
+              >
+              
+              </Popconfirm>
+            </div>
 
-          <div className="flex-1 min-h-0 overflow-auto pr-1">
-            {loadingItens ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <Spin size="small" />
-              </div>
-            ) : itens.length === 0 ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <Empty
-                  description="Sem itens nesta lista"
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {itens.map((item, index) => {
-                  const isEditing = editingItemId === item.id;
+            <div className="flex items-center gap-2">
+              <Input
+                value={newItemConteudo}
+                placeholder="Adicionar novo item"
+                onChange={(event) => setNewItemConteudo(event.target.value)}
+                onPressEnter={() => {
+                  void handleCreateItem();
+                }}
+                disabled={!listaAtivaId || isSaving}
+              />
+              <Button
+                type="primary"
+                className="listas-tarefas-action-btn"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  void handleCreateItem();
+                }}
+                disabled={!listaAtivaId || !newItemConteudo.trim() || isSaving}
+              >
+                
+              </Button>
+            </div>
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-2 p-2 rounded border border-gray-200 bg-white/70"
-                    >
-                      <Checkbox
-                        checked={item.concluido}
-                        onChange={(event) => {
-                          void handleToggleItem(item, event.target.checked);
-                        }}
-                        disabled={isSaving}
-                      />
+            <div className="flex-1 min-h-0 overflow-auto pr-1 widget-no-scrollbar">
+              {loadingItens ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Spin size="small" />
+                </div>
+              ) : itens.length === 0 ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Empty
+                    description={<span className="text-white/75">Sem itens nesta lista</span>}
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {itens.map((item, index) => {
+                    const isEditing = editingItemId === item.id;
 
-                      <div className="flex-1 min-w-0">
-                        {isEditing ? (
-                          <Input
-                            value={editingItemConteudo}
-                            onChange={(event) => setEditingItemConteudo(event.target.value)}
-                            onPressEnter={() => {
-                              void handleSaveItemEdit(item);
-                            }}
-                            onBlur={() => {
-                              void handleSaveItemEdit(item);
-                            }}
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 p-2 rounded-md border border-black/10 bg-black/5"
+                      >
+                        <Checkbox
+                          checked={item.concluido}
+                          onChange={(event) => {
+                            void handleToggleItem(item, event.target.checked);
+                          }}
+                          disabled={isSaving}
+                        />
+
+                        <div className="flex-1 min-w-0">
+                          {isEditing ? (
+                            <Input
+                              value={editingItemConteudo}
+                              onChange={(event) => setEditingItemConteudo(event.target.value)}
+                              onPressEnter={() => {
+                                void handleSaveItemEdit(item);
+                              }}
+                              onBlur={() => {
+                                void handleSaveItemEdit(item);
+                              }}
+                              size="small"
+                              autoFocus
+                            />
+                          ) : (
+                            <Text
+                              className={`block truncate ${
+                                item.concluido ? 'line-through text-white/45' : 'text-white'
+                              }`}
+                              title={item.conteudo}
+                            >
+                              {item.conteudo}
+                            </Text>
+                          )}
+                        </div>
+
+                        <Space size={2}>
+                          <Button
+                            type="text"
                             size="small"
-                            autoFocus
+                            className="listas-tarefas-action-btn"
+                            icon={<ArrowUpOutlined />}
+                            disabled={index === 0 || isSaving}
+                            onClick={() => {
+                              void handleMoveItem(item.id, 'up');
+                            }}
                           />
-                        ) : (
-                          <Text
-                            className={`block truncate ${item.concluido ? 'line-through text-gray-400' : ''}`}
-                            title={item.conteudo}
+                          <Button
+                            type="text"
+                            size="small"
+                            className="listas-tarefas-action-btn"
+                            icon={<ArrowDownOutlined />}
+                            disabled={index === itens.length - 1 || isSaving}
+                            onClick={() => {
+                              void handleMoveItem(item.id, 'down');
+                            }}
+                          />
+                          {!isEditing && (
+                            <Button
+                              type="text"
+                              size="small"
+                              className="listas-tarefas-action-btn listas-tarefas-edit-btn"
+                              icon={<EditOutlined />}
+                              disabled={isSaving}
+                              onClick={() => startEditItem(item)}
+                            />
+                          )}
+                          <Popconfirm
+                            overlayClassName="listas-tarefas-popconfirm"
+                            title="Excluir item"
+                            description="Deseja remover este item?"
+                            okText="Excluir"
+                            cancelText="Cancelar"
+                            onConfirm={() => {
+                              void handleDeleteItem(item.id);
+                            }}
                           >
-                            {item.conteudo}
-                          </Text>
-                        )}
+                            <Button
+                              type="text"
+                              size="small"
+                              className="listas-tarefas-action-btn listas-tarefas-delete-btn"
+                              danger
+                              icon={<DeleteOutlined />}
+                              disabled={isSaving}
+                            />
+                          </Popconfirm>
+                        </Space>
                       </div>
-
-                      <Space size={2}>
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<ArrowUpOutlined />}
-                          disabled={index === 0 || isSaving}
-                          onClick={() => {
-                            void handleMoveItem(item.id, 'up');
-                          }}
-                        />
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<ArrowDownOutlined />}
-                          disabled={index === itens.length - 1 || isSaving}
-                          onClick={() => {
-                            void handleMoveItem(item.id, 'down');
-                          }}
-                        />
-                        {!isEditing && (
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={<EditOutlined />}
-                            disabled={isSaving}
-                            onClick={() => startEditItem(item)}
-                          />
-                        )}
-                        <Popconfirm
-                          title="Excluir item"
-                          description="Deseja remover este item?"
-                          okText="Excluir"
-                          cancelText="Cancelar"
-                          onConfirm={() => {
-                            void handleDeleteItem(item.id);
-                          }}
-                        >
-                          <Button
-                            type="text"
-                            size="small"
-                            danger
-                            icon={<DeleteOutlined />}
-                            disabled={isSaving}
-                          />
-                        </Popconfirm>
-                      </Space>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </>
-      )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
 
       <Modal
         title="Nova lista"
