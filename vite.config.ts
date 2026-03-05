@@ -8,6 +8,11 @@ export default defineConfig(({  }) => {
   return {
     server: {
       host: "0.0.0.0",
+      allowedHosts: true,
+    },
+    preview: {
+      host: "0.0.0.0",
+      allowedHosts: true,
     },
     plugins,
     build: {
