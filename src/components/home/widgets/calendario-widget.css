@@ -1,0 +1,26 @@
+.calendario-widget .ant-select .ant-select-selector {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.calendario-widget .ant-select .ant-select-selection-item,
+.calendario-widget .ant-select .ant-select-selection-placeholder,
+.calendario-widget .ant-select .ant-select-arrow {
+  color: #fff !important;
+}
+
+.calendario-widget-select-dropdown.ant-select-dropdown {
+  background: #1f1e27;
+}
+
+.calendario-widget-select-dropdown .ant-select-item {
+  color: #fff;
+}
+
+.calendario-widget-select-dropdown .ant-select-item-option-active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.calendario-widget-select-dropdown .ant-select-item-option-selected {
+  background: rgba(255, 255, 255, 0.2);
+}

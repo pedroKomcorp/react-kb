@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-export type HomeWidgetKey = 'projetos' | 'listas_tarefas' | 'calendario';
+export type HomeWidgetKey = 'projetos' | 'servicos_recorrentes' | 'listas_tarefas' | 'calendario';
 
 interface HomeWidgetOption {
   label: string;
@@ -14,12 +14,13 @@ interface HomeWidgetsContextType {
   widgetOptions: HomeWidgetOption[];
 }
 
-const WIDGET_SELECTOR_STORAGE_KEY = 'home_selected_widgets_v1';
-const DEFAULT_WIDGET_KEYS: HomeWidgetKey[] = ['projetos', 'listas_tarefas', 'calendario'];
+const WIDGET_SELECTOR_STORAGE_KEY = 'home_selected_widgets_v2';
+const DEFAULT_WIDGET_KEYS: HomeWidgetKey[] = ['projetos', 'servicos_recorrentes', 'listas_tarefas', 'calendario'];
 const ALLOWED_KEYS = new Set<HomeWidgetKey>(DEFAULT_WIDGET_KEYS);
 
 const WIDGET_OPTIONS: HomeWidgetOption[] = [
   { label: 'Projetos', value: 'projetos' },
+  { label: 'Serviços Recorrentes', value: 'servicos_recorrentes' },
   { label: 'Listas de Tarefas', value: 'listas_tarefas' },
   { label: 'Calendário', value: 'calendario' },
 ];
