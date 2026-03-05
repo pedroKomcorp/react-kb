@@ -83,10 +83,12 @@ export const DemandasPage: React.FC = () => {
     ]);
     
     // Associate etapas with their projetos
-    const projetosWithEtapas = projetosResponse.projetos.map(projeto => ({
+    const projetosWithEtapas = projetosResponse.projetos
+      .filter(projeto => projeto.categoria !== 'SR')
+      .map(projeto => ({
       ...projeto,
       etapas: etapasData.filter(etapa => etapa.projeto_id === projeto.id)
-    }));
+      }));
     
     setProjetos(projetosWithEtapas);
     setUsuarios(usuariosData);

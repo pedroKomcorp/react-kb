@@ -58,6 +58,9 @@ const CalendarioWidget: React.FC = () => {
 
         // Filter projetos for current user (either responsible or annexed)
         const userProjetos = projetosWithEtapas.filter(projeto => {
+          if (projeto.categoria === 'SR') {
+            return false;
+          }
           if (projeto.responsavel_id === userId) {
             return true;
           }

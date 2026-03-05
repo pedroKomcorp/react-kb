@@ -49,6 +49,7 @@ const ProjetoKanbanView: React.FC<ProjetoKanbanViewProps> = ({
     ES: { label: 'Escrituração', color: 'gold', shortLabel: 'ES' },
     RA: { label: 'Radar', color: 'lime', shortLabel: 'RA' },
     ST: { label: 'Solicitação TTD', color: 'volcano', shortLabel: 'ST' },
+    SR: { label: 'Serviços Recorrentes', color: 'blue', shortLabel: 'SR' },
     OT: { label: 'Outro', color: 'default', shortLabel: 'OT' },
   };
 
@@ -178,7 +179,7 @@ const ProjetoKanbanView: React.FC<ProjetoKanbanViewProps> = ({
                 {columnProjetos.map((projeto) => {
                   const progress = getEtapasProgress(projeto);
                   const priority = priorities[projeto.prioridade];
-                  const category = categories[projeto.categoria];
+                  const category = categories[projeto.categoria] || categories.OT;
                   const deadlineStatus = getDeadlineStatus(projeto.data_prazo);
 
                   return (
