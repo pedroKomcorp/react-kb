@@ -45,7 +45,8 @@ const ProjetosWidget: React.FC = () => {
 							const userId = Number(localStorage.getItem('user_id'));
 							
 
-							const filtered = allProjetos.filter(p =>
+							const filtered = allProjetos.filter(
+								p =>
 									p.categoria !== 'SR' &&
 									(
 										p.responsavel_id === userId ||
@@ -225,6 +226,7 @@ const ProjetosWidget: React.FC = () => {
 
 		const projetosFiltrados = projetos
 			.filter(p =>
+				p.categoria !== 'SR' &&
 				(nome === '' || p.nome.toLowerCase().includes(nome.toLowerCase())) &&
 				(status.length === 0 || status.includes(p.status)) &&
 				(categoria.length === 0 || categoria.includes(p.categoria)) &&

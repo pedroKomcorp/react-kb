@@ -78,9 +78,9 @@ const ProjetosPage: React.FC = () => {
   }, [fetchData]);
   const [showProjetoModal, setShowProjetoModal] = useState(false);
   const [novoProjetoNome, setNovoProjetoNome] = useState('');
-  const [novoProjetoPrioridade, setNovoProjetoPrioridade] = useState<ProjetoPrioridade>('MD');
-  const [novoProjetoStatus, setNovoProjetoStatus] = useState<ProjetoStatus>('NI');
-  const [novoProjetoCategoria, setNovoProjetoCategoria] = useState<ProjetoCategoria>('OT');
+  const [novoProjetoPrioridade, setNovoProjetoPrioridade] = useState<'UT' | 'AL' | 'MD' | 'BA'>('MD');
+  const [novoProjetoStatus, setNovoProjetoStatus] = useState<'NI' | 'EA' | 'C' | 'P'>('NI');
+  const [novoProjetoCategoria, setNovoProjetoCategoria] = useState<Projeto['categoria']>('OT');
   const [novoProjetoResponsavel, setNovoProjetoResponsavel] = useState<number | undefined>(usuarios[0]?.id);
   const [novoProjetoClienteId, setNovoProjetoClienteId] = useState<number | undefined>(undefined);
   const [novoProjetoUsuariosAnexados, setNovoProjetoUsuariosAnexados] = useState<number[]>([]);
@@ -88,8 +88,9 @@ const ProjetosPage: React.FC = () => {
   const [novoProjetoDataInicio, setNovoProjetoDataInicio] = useState<string | null>(null);
   const [novoProjetoDataPrazo, setNovoProjetoDataPrazo] = useState<string | null>(null);
   const [novoProjetoDataFim, setNovoProjetoDataFim] = useState<string | null>(null);
-  const [novoProjetoRecorrenciaIntervaloDias, setNovoProjetoRecorrenciaIntervaloDias] = useState<number | null>(30);
-  const [novoProjetoRecorrenciaStatusReinicio, setNovoProjetoRecorrenciaStatusReinicio] = useState<ProjetoStatus>('NI');
+  const [novoProjetoFrequencia, setNovoProjetoFrequencia] = useState<Projeto['frequencia']>(undefined);
+  const [novoProjetoIntervaloDias, setNovoProjetoIntervaloDias] = useState<number | null>(null);
+  const [novoProjetoDataInicioRecorrencia, setNovoProjetoDataInicioRecorrencia] = useState<string | null>(null);
   const [novoEtapaNome, setNovoEtapaNome] = useState('');
   const [detailModalProjeto, setDetailModalProjeto] = useState<Projeto | null>(null);
   const [detailModalEtapa, setDetailModalEtapa] = useState<EtapaWithProjeto | null>(null);
@@ -102,6 +103,17 @@ const ProjetosPage: React.FC = () => {
 
   const handleClienteSelect = (cliente: Cliente | null) => {
     setNovoProjetoClienteId(cliente?.id || undefined);
+  };
+
+  const handleNovoProjetoCategoriaChange = (categoria: Projeto['categoria']) => {
+    setNovoProjetoCategoria(categoria);
+    if (categoria === 'SR') {
+      setNovoProjetoFrequencia(prev => prev || 'MONTHLY');
+      return;
+    }
+    setNovoProjetoFrequencia(undefined);
+    setNovoProjetoIntervaloDias(null);
+    setNovoProjetoDataInicioRecorrencia(null);
   };
 
   // Função para lidar com a seleção do usuário "Todos"
@@ -124,8 +136,12 @@ const ProjetosPage: React.FC = () => {
 
   const handleAddProjeto = async () => {
     if (novoProjetoNome.trim()) {
-      if (novoProjetoCategoria === 'SR' && (!novoProjetoRecorrenciaIntervaloDias || novoProjetoRecorrenciaIntervaloDias <= 0)) {
-        message.warning('Informe o intervalo de recorrência (em dias) para o serviço recorrente.');
+      if (novoProjetoCategoria === 'SR' && !novoProjetoFrequencia) {
+        message.warning('Selecione a frequência da recorrência para projetos SR.');
+        return;
+      }
+      if (novoProjetoCategoria === 'SR' && novoProjetoFrequencia === 'INTERVAL_DAYS' && (!novoProjetoIntervaloDias || novoProjetoIntervaloDias < 1)) {
+        message.warning('Defina um intervalo de dias válido para recorrência por intervalo.');
         return;
       }
 
@@ -141,13 +157,11 @@ const ProjetosPage: React.FC = () => {
           usuarios_anexados: novoProjetoUsuariosAnexados,
           descricao: novoProjetoDescricao,
           data_inicio: novoProjetoDataInicio,
-          data_prazo: novoProjetoCategoria === 'SR' ? null : novoProjetoDataPrazo,
-          data_fim: novoProjetoCategoria === 'SR' ? null : novoProjetoDataFim,
-          recorrencia_ativa: novoProjetoCategoria === 'SR' ? true : undefined,
-          recorrencia_intervalo_dias:
-            novoProjetoCategoria === 'SR' ? novoProjetoRecorrenciaIntervaloDias : undefined,
-          recorrencia_status_reinicio:
-            novoProjetoCategoria === 'SR' ? novoProjetoRecorrenciaStatusReinicio : undefined,
+          data_prazo: novoProjetoDataPrazo,
+          data_fim: novoProjetoDataFim,
+          frequencia: novoProjetoCategoria === 'SR' ? novoProjetoFrequencia : undefined,
+          intervalo_dias: novoProjetoCategoria === 'SR' && novoProjetoFrequencia === 'INTERVAL_DAYS' ? novoProjetoIntervaloDias : undefined,
+          data_inicio_recorrencia: novoProjetoCategoria === 'SR' ? novoProjetoDataInicioRecorrencia : undefined,
           anexados: [],
           etapas: [],
         });
@@ -162,8 +176,9 @@ const ProjetosPage: React.FC = () => {
         setNovoProjetoDataInicio(null);
         setNovoProjetoDataPrazo(null);
         setNovoProjetoDataFim(null);
-        setNovoProjetoRecorrenciaIntervaloDias(30);
-        setNovoProjetoRecorrenciaStatusReinicio('NI');
+        setNovoProjetoFrequencia(undefined);
+        setNovoProjetoIntervaloDias(null);
+        setNovoProjetoDataInicioRecorrencia(null);
         setShowProjetoModal(false);
         message.success('Projeto criado com sucesso!');
         fetchData();
@@ -221,6 +236,7 @@ const ProjetosPage: React.FC = () => {
 
   // Filtered data
   const filteredProjetos = projetos.filter(p =>
+    p.categoria !== 'SR' &&
     (!filterStatus || p.status === filterStatus) &&
     (!filterCategoria || p.categoria === filterCategoria) &&
     (!filterNome || p.nome.toLowerCase().includes(filterNome.toLowerCase())) &&
@@ -269,8 +285,9 @@ const ProjetosPage: React.FC = () => {
           setNovoProjetoDataInicio(null);
           setNovoProjetoDataPrazo(null);
           setNovoProjetoDataFim(null);
-          setNovoProjetoRecorrenciaIntervaloDias(30);
-          setNovoProjetoRecorrenciaStatusReinicio('NI');
+          setNovoProjetoFrequencia(undefined);
+          setNovoProjetoIntervaloDias(null);
+          setNovoProjetoDataInicioRecorrencia(null);
         }}
         onOk={handleAddProjeto}
         okText="Criar Projeto"
@@ -317,7 +334,7 @@ const ProjetosPage: React.FC = () => {
                 </label>
                 <Select
                   value={novoProjetoCategoria}
-                  onChange={setNovoProjetoCategoria}
+                  onChange={handleNovoProjetoCategoriaChange}
                   size="large"
                   style={{ width: '100%' }}
                   options={[
@@ -331,7 +348,7 @@ const ProjetosPage: React.FC = () => {
                     { value: 'ES', label: '📝 Escrituração' },
                     { value: 'RA', label: '🚚 Radar' },
                     { value: 'ST', label: '📄 Solicitação TTD' },
-                    { value: 'SR', label: '🔁 Serviço Recorrente' },
+                    { value: 'SR', label: '🔁 Serviços Recorrentes' },
                     { value: 'OT', label: '📋 Outro' },
                   ]}
                 />
@@ -399,6 +416,59 @@ const ProjetosPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {novoProjetoCategoria === 'SR' && (
+            <div>
+              <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
+                Configuração de Recorrência
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Frequência
+                  </label>
+                  <Select
+                    value={novoProjetoFrequencia}
+                    onChange={setNovoProjetoFrequencia}
+                    size="large"
+                    style={{ width: '100%' }}
+                    options={[
+                      { value: 'DAILY', label: 'Diária' },
+                      { value: 'WEEKLY', label: 'Semanal' },
+                      { value: 'MONTHLY', label: 'Mensal' },
+                      { value: 'INTERVAL_DAYS', label: 'Intervalo de Dias' },
+                    ]}
+                  />
+                </div>
+                {novoProjetoFrequencia === 'INTERVAL_DAYS' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Intervalo (dias)
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={novoProjetoIntervaloDias ?? ''}
+                      onChange={e => setNovoProjetoIntervaloDias(e.target.value ? Number(e.target.value) : null)}
+                      size="large"
+                      placeholder="Ex.: 15"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Data de Início da Recorrência
+                  </label>
+                  <Input
+                    type="date"
+                    value={novoProjetoDataInicioRecorrencia || ''}
+                    onChange={e => setNovoProjetoDataInicioRecorrencia(e.target.value || null)}
+                    size="large"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Client and Team Section */}
           <div>

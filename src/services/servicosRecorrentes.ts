@@ -1,91 +1,136 @@
 import api from './api';
-import { getProjetos } from './projetos';
-import { authHeaders } from './utils';
-import type { Projeto, ProjetoStatus } from '../types/projeto';
+import {
+  authHeaders,
+  getAuthToken,
+  handleServiceError,
+} from './utils';
+import type {
+  ServicoRecorrenteInstancia,
+  ServicoRecorrenteTemplate,
+} from '../types/recorrencia';
 
-export type ServicoRecorrente = Projeto & {
-  categoria: 'SR';
-  recorrencia_ativa?: boolean;
-  recorrencia_intervalo_dias?: number | null;
-  recorrencia_status_reinicio?: ProjetoStatus | null;
-  recorrencia_ultima_execucao?: string | null;
-  recorrencia_proxima_execucao?: string | null;
+interface PendingInstanciasParams {
+  limit?: number;
+  includeOverdue?: boolean;
+}
+
+const PENDING_ROUTES = [
+  '/servicos-recorrentes/instancias/pendentes',
+  '/servicos_recorrentes/instancias/pendentes',
+  '/servicos-recorrentes/pendentes',
+] as const;
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null;
 };
 
-type ServicosRecorrentesResponse = {
-  servicos_recorrentes?: ServicoRecorrente[];
-  projetos?: ServicoRecorrente[];
-  total?: number;
-};
-
-const isAxiosNotFound = (error: unknown) => {
-  if (!error || typeof error !== 'object' || !('response' in error)) {
+const isNotFoundError = (error: unknown): boolean => {
+  if (!isRecord(error)) {
     return false;
   }
-  const response = (error as { response?: { status?: number } }).response;
-  return response?.status === 404;
+
+  const response = error.response;
+  if (!isRecord(response)) {
+    return false;
+  }
+
+  return response.status === 404;
 };
 
-const normalizeListResponse = (
-  payload: ServicosRecorrentesResponse
-): { projetos: ServicoRecorrente[]; total: number } => {
-  const projetos = payload.servicos_recorrentes ?? payload.projetos ?? [];
-  return {
-    projetos,
-    total: payload.total ?? projetos.length,
-  };
-};
+const extractListFromPayload = <T>(
+  payload: unknown,
+  keys: string[]
+): T[] => {
+  if (Array.isArray(payload)) {
+    return payload as T[];
+  }
 
-export const getServicosRecorrentes = async (
-  params?: { offset?: number; limit?: number },
-  token?: string
-) => {
-  const queryParams = { ...(params || {}), limit: params?.limit ?? 1000 };
+  if (!isRecord(payload)) {
+    return [];
+  }
 
-  try {
-    const res = await api.get<ServicosRecorrentesResponse>(
-      '/servicos-recorrentes/',
-      {
-        params: queryParams,
-        ...(token && authHeaders(token)),
+  for (const key of keys) {
+    const candidate = payload[key];
+    if (Array.isArray(candidate)) {
+      return candidate as T[];
+    }
+  }
+
+  const nestedData = payload.data;
+  if (isRecord(nestedData)) {
+    for (const key of keys) {
+      const candidate = nestedData[key];
+      if (Array.isArray(candidate)) {
+        return candidate as T[];
       }
-    );
-    return normalizeListResponse(res.data);
-  } catch (error) {
-    if (!isAxiosNotFound(error)) {
-      throw error;
     }
-
-    const fallback = await getProjetos(params, token);
-    const recorrentes = fallback.projetos.filter(
-      (projeto): projeto is ServicoRecorrente => projeto.categoria === 'SR'
-    );
-    return { projetos: recorrentes, total: recorrentes.length };
   }
+
+  return [];
 };
 
-export const updateServicoRecorrente = async (
-  id: number,
-  payload: Partial<Omit<ServicoRecorrente, 'id' | 'categoria'>>,
+export const getServicosRecorrentesTemplates = async (
   token?: string
-) => {
+): Promise<ServicoRecorrenteTemplate[]> => {
   try {
-    const res = await api.put<ServicoRecorrente>(
-      `/servicos-recorrentes/${id}`,
-      payload,
-      token ? authHeaders(token) : undefined
+    const authToken = getAuthToken(token);
+    const res = await api.get<unknown>(
+      '/servicos-recorrentes/templates',
+      authHeaders(authToken)
     );
-    return res.data;
+
+    return extractListFromPayload<ServicoRecorrenteTemplate>(res.data, [
+      'templates',
+      'servicos_recorrentes',
+      'servicos',
+      'items',
+    ]);
   } catch (error) {
-    if (!isAxiosNotFound(error)) {
-      throw error;
+    handleServiceError(error, 'busca de templates de serviços recorrentes');
+  }
+
+  throw new Error('Falha inesperada ao buscar templates de serviços recorrentes');
+};
+
+export const getInstanciasRecorrentesPendentes = async (
+  params?: PendingInstanciasParams,
+  token?: string
+): Promise<ServicoRecorrenteInstancia[]> => {
+  try {
+    const authToken = getAuthToken(token);
+    const query = {
+      ...(typeof params?.limit === 'number' ? { limit: params.limit } : {}),
+      ...(typeof params?.includeOverdue === 'boolean'
+        ? { include_overdue: params.includeOverdue }
+        : {}),
+    };
+
+    for (const route of PENDING_ROUTES) {
+      try {
+        const res = await api.get<unknown>(route, {
+          ...authHeaders(authToken),
+          params: query,
+        });
+
+        return extractListFromPayload<ServicoRecorrenteInstancia>(res.data, [
+          'instancias',
+          'instances',
+          'pendentes',
+          'servicos_recorrentes',
+          'items',
+        ]);
+      } catch (routeError) {
+        if (isNotFoundError(routeError)) {
+          continue;
+        }
+        throw routeError;
+      }
     }
 
-    const fallback = await api.put<Projeto>(
-      `/projetos/${id}`,
-      payload,
-      token ? authHeaders(token) : undefined
-    );
-    return fallback.data as ServicoRecorrente;
+    throw new Error('Rota de instâncias recorrentes pendentes não encontrada');
+  } catch (error) {
+    handleServiceError(error, 'busca de instâncias recorrentes pendentes');
   }
+
+  throw new Error('Falha inesperada ao buscar instâncias recorrentes pendentes');
 };

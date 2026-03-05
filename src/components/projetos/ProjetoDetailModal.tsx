@@ -96,9 +96,23 @@ const categoryOptions = [
     { value: 'ES', label: 'Escrituração' },
     { value: 'RA', label: 'Radar' },
     { value: 'ST', label: 'Solicitação TTD' },
-    { value: 'SR', label: 'Serviço Recorrente' },
+    { value: 'SR', label: 'Serviços Recorrentes' },
     { value: 'OT', label: 'Outro' },
 ];
+
+const recorrenciaOptions: { value: NonNullable<Projeto['frequencia']>; label: string }[] = [
+  { value: 'DAILY', label: 'Diária' },
+  { value: 'WEEKLY', label: 'Semanal' },
+  { value: 'MONTHLY', label: 'Mensal' },
+  { value: 'INTERVAL_DAYS', label: 'Intervalo de Dias' },
+];
+
+const recorrenciaLabelMap: Record<NonNullable<Projeto['frequencia']>, string> = {
+  DAILY: 'Diária',
+  WEEKLY: 'Semanal',
+  MONTHLY: 'Mensal',
+  INTERVAL_DAYS: 'Intervalo de Dias',
+};
 
 // Helper to format date for input[type="date"]
 const formatDateForInput = (dateString: string | null | undefined): string => {
@@ -581,6 +595,26 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
     setIsEditingProjeto(false);
   }
 
+  const handleCategoriaChange = (categoria: Projeto['categoria']) => {
+    setEditedProjeto(p => {
+      if (!p) return null;
+      if (categoria === 'SR') {
+        return {
+          ...p,
+          categoria,
+          frequencia: p.frequencia || 'MONTHLY',
+        };
+      }
+      return {
+        ...p,
+        categoria,
+        frequencia: undefined,
+        intervalo_dias: undefined,
+        data_inicio_recorrencia: undefined,
+      };
+    });
+  };
+
   const handleAddEtapa = async (values: { nome: string; descricao?: string; data_prazo?: dayjs.Dayjs; usuario_id: number }) => {
     const formattedPayload: Partial<Etapa> = {
       nome: values.nome,
@@ -806,8 +840,73 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
           </Descriptions.Item>
 
           <Descriptions.Item label="Categoria">
-            {isEditingProjeto ? <Select value={editedProjeto.categoria} onChange={val => setEditedProjeto(p => p ? { ...p, categoria: val } : null)} options={categoryOptions} style={{ width: '100%' }} /> : categoryOptions.find(c=>c.value === editedProjeto.categoria)?.label}
+            {isEditingProjeto ? <Select value={editedProjeto.categoria} onChange={handleCategoriaChange} options={categoryOptions} style={{ width: '100%' }} /> : categoryOptions.find(c=>c.value === editedProjeto.categoria)?.label}
           </Descriptions.Item>
+
+          {editedProjeto.categoria === 'SR' && (
+            <>
+              <Descriptions.Item label="Frequência">
+                {isEditingProjeto ? (
+                  <Select
+                    value={editedProjeto.frequencia}
+                    onChange={val =>
+                      setEditedProjeto(p =>
+                        p
+                          ? {
+                              ...p,
+                              frequencia: val,
+                              intervalo_dias: val === 'INTERVAL_DAYS' ? p.intervalo_dias : undefined,
+                            }
+                          : null
+                      )
+                    }
+                    options={recorrenciaOptions}
+                    style={{ width: '100%' }}
+                  />
+                ) : (
+                  (editedProjeto.frequencia && recorrenciaLabelMap[editedProjeto.frequencia]) || '-'
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Intervalo (dias)">
+                {isEditingProjeto ? (
+                  <InputNumber
+                    min={1}
+                    disabled={editedProjeto.frequencia !== 'INTERVAL_DAYS'}
+                    value={editedProjeto.frequencia === 'INTERVAL_DAYS' ? editedProjeto.intervalo_dias ?? undefined : undefined}
+                    onChange={val =>
+                      setEditedProjeto(p =>
+                        p
+                          ? {
+                              ...p,
+                              intervalo_dias: p.frequencia === 'INTERVAL_DAYS' ? (typeof val === 'number' ? val : null) : undefined,
+                            }
+                          : null
+                      )
+                    }
+                    style={{ width: '100%' }}
+                    placeholder="Ex.: 15"
+                  />
+                ) : (
+                  editedProjeto.frequencia === 'INTERVAL_DAYS' ? (editedProjeto.intervalo_dias ?? '-') : '-'
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Data de Início da Recorrência" span={2}>
+                {isEditingProjeto ? (
+                  <Input
+                    type="date"
+                    value={formatDateForInput(editedProjeto.data_inicio_recorrencia)}
+                    onChange={e =>
+                      setEditedProjeto(p =>
+                        p ? { ...p, data_inicio_recorrencia: e.target.value || null } : null
+                      )
+                    }
+                  />
+                ) : (
+                  formatDateForInput(editedProjeto.data_inicio_recorrencia) || '-'
+                )}
+              </Descriptions.Item>
+            </>
+          )}
           <Descriptions.Item label="Anexos">
             {Array.isArray(editedProjeto.anexados) ? editedProjeto.anexados.length : 0}
           </Descriptions.Item>

@@ -1,189 +1,320 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Card, Empty, Input, List, Spin, Tag, Typography, message } from 'antd';
-import { CheckCircleOutlined, RollbackOutlined } from '@ant-design/icons';
-import { getUsuarios } from '../../../services/usuarios';
-import { getServicosRecorrentes, updateServicoRecorrente, type ServicoRecorrente } from '../../../services/servicosRecorrentes';
-import type { ProjetoStatus } from '../../../types/projeto';
-import type { Usuario } from '../../../types/usuario';
-import './servicos-recorrentes-widget.css';
+import { getInstanciasRecorrentesPendentes } from '../../../services/servicosRecorrentes';
+import type { ServicoRecorrenteInstancia } from '../../../types/recorrencia';
 
-const { Text } = Typography;
+type BadgeTone = 'red' | 'amber' | 'blue' | 'green' | 'gray';
 
-const statusOptions: Array<{ value: ProjetoStatus; label: string }> = [
-  { value: 'NI', label: 'Não Iniciado' },
-  { value: 'EA', label: 'Em Andamento' },
-  { value: 'P', label: 'Pausado' },
-  { value: 'C', label: 'Concluído' },
-];
+interface NormalizedInstancia {
+  id: string;
+  titulo: string;
+  descricao: string;
+  status: string;
+  dataVencimento: Date | null;
+  dataVencimentoRaw: string;
+  contexto: string;
+  actionUrl: string;
+}
 
-const statusColor: Record<ProjetoStatus, string> = {
-  NI: 'default',
-  EA: 'processing',
-  P: 'warning',
-  C: 'success',
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null;
 };
 
-const statusLabel = (status: ProjetoStatus) => {
-  return statusOptions.find((item) => item.value === status)?.label ?? status;
+const readString = (obj: Record<string, unknown>, keys: string[]): string => {
+  for (const key of keys) {
+    const value = obj[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === 'number') {
+      return String(value);
+    }
+  }
+  return '';
 };
 
-const formatDateTime = (value?: string | null) => {
-  if (!value) return 'Não definido';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Não definido';
-  return date.toLocaleString('pt-BR', {
+const readRecord = (obj: Record<string, unknown>, keys: string[]): Record<string, unknown> => {
+  for (const key of keys) {
+    const value = obj[key];
+    if (isRecord(value)) {
+      return value;
+    }
+  }
+  return {};
+};
+
+const parseDate = (value: string): Date | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatDueDate = (date: Date | null, raw: string): string => {
+  if (!date) {
+    return raw || 'Sem data';
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
-    year: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+    year: 'numeric',
+  }).format(date);
+};
+
+const statusToTone = (status: string): BadgeTone => {
+  const normalized = status.toLowerCase();
+
+  if (normalized.includes('venc') || normalized.includes('atras')) {
+    return 'red';
+  }
+  if (normalized.includes('andamento') || normalized.includes('exec')) {
+    return 'blue';
+  }
+  if (normalized.includes('concl') || normalized.includes('done')) {
+    return 'green';
+  }
+  if (normalized.includes('pend')) {
+    return 'amber';
+  }
+  return 'gray';
+};
+
+const badgeClasses: Record<BadgeTone, string> = {
+  red: 'bg-red-100 text-red-800 border-red-200',
+  amber: 'bg-amber-100 text-amber-800 border-amber-200',
+  blue: 'bg-blue-100 text-blue-800 border-blue-200',
+  green: 'bg-green-100 text-green-800 border-green-200',
+  gray: 'bg-gray-100 text-gray-700 border-gray-200',
+};
+
+const normalizeInstancia = (
+  item: ServicoRecorrenteInstancia,
+  index: number
+): NormalizedInstancia => {
+  const source = isRecord(item) ? item : {};
+  const template = readRecord(source, [
+    'template',
+    'servico_template',
+    'servico_recorrente',
+    'template_servico',
+  ]);
+  const cliente = readRecord(source, ['cliente']);
+  const projeto = readRecord(source, ['projeto']);
+
+  const rawId = readString(source, ['id', 'instancia_id', 'instance_id']);
+  const titulo =
+    readString(source, ['nome', 'titulo', 'servico_nome', 'nome_servico']) ||
+    readString(template, ['nome', 'titulo']) ||
+    `Serviço recorrente ${rawId || `#${index + 1}`}`;
+
+  const descricao =
+    readString(source, ['descricao', 'detalhes', 'observacao', 'observações']) ||
+    readString(template, ['descricao', 'detalhes']);
+
+  const status =
+    readString(source, ['status', 'situacao', 'state']) ||
+    readString(template, ['status']) ||
+    'pendente';
+
+  const dueRaw =
+    readString(source, [
+      'data_vencimento',
+      'vencimento',
+      'due_date',
+      'data_prevista',
+      'data_execucao',
+      'proxima_execucao',
+    ]) ||
+    readString(template, ['proxima_execucao', 'data_vencimento']);
+
+  const clienteNome = readString(cliente, ['nome', 'razao_social']);
+  const projetoNome = readString(projeto, ['nome']);
+  const frequencia = readString(template, ['frequencia']);
+
+  const contextoParts = [clienteNome, projetoNome, frequencia && `Freq. ${frequencia}`]
+    .filter(Boolean)
+    .join(' • ');
+
+  const actionUrl = readString(source, [
+    'url',
+    'link',
+    'details_url',
+    'detalhes_url',
+    'detail_url',
+  ]);
+
+  return {
+    id: rawId || `temp-${index}`,
+    titulo,
+    descricao,
+    status,
+    dataVencimento: parseDate(dueRaw),
+    dataVencimentoRaw: dueRaw,
+    contexto: contextoParts,
+    actionUrl,
+  };
+};
+
+const compareByDueDate = (a: NormalizedInstancia, b: NormalizedInstancia): number => {
+  if (!a.dataVencimento && !b.dataVencimento) {
+    return a.titulo.localeCompare(b.titulo);
+  }
+  if (!a.dataVencimento) {
+    return 1;
+  }
+  if (!b.dataVencimento) {
+    return -1;
+  }
+  return a.dataVencimento.getTime() - b.dataVencimento.getTime();
 };
 
 const ServicosRecorrentesWidget: React.FC = () => {
+  const [instancias, setInstancias] = useState<NormalizedInstancia[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [servicos, setServicos] = useState<ServicoRecorrente[]>([]);
-  const [filterNome, setFilterNome] = useState('');
+  const [error, setError] = useState('');
 
-  const fetchData = useCallback(async () => {
+  const loadInstancias = useCallback(async () => {
     setLoading(true);
+    setError('');
+
     try {
-      const [usuariosRes, servicosRes] = await Promise.all([
-        getUsuarios(),
-        getServicosRecorrentes(),
-      ]);
-      setUsuarios(usuariosRes);
-      setServicos(servicosRes.projetos);
-    } catch (error) {
-      console.error('Erro ao carregar serviços recorrentes:', error);
-      message.error('Não foi possível carregar os serviços recorrentes.');
+      const data = await getInstanciasRecorrentesPendentes(
+        {
+          includeOverdue: true,
+          limit: 20,
+        }
+      );
+
+      const normalized = data.map((item, index) => normalizeInstancia(item, index));
+      normalized.sort(compareByDueDate);
+      setInstancias(normalized);
+    } catch (loadError) {
+      console.error('Erro ao carregar serviços recorrentes pendentes:', loadError);
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : 'Não foi possível carregar os serviços recorrentes.'
+      );
+      setInstancias([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    void loadInstancias();
+  }, [loadInstancias]);
 
-  const filteredServicos = useMemo(() => {
-    return servicos.filter((servico) => {
-      return !filterNome || servico.nome.toLowerCase().includes(filterNome.toLowerCase());
-    });
-  }, [filterNome, servicos]);
-
-  const getResponsavelNome = (responsavelId: number) => {
-    return usuarios.find((usuario) => usuario.id === responsavelId)?.nome ?? 'Não definido';
-  };
-
-  const handleToggleConclusao = async (servico: ServicoRecorrente) => {
-    const isDone = servico.status === 'C';
-    const nextStatus: ProjetoStatus = isDone
-      ? (servico.recorrencia_status_reinicio ?? 'NI')
-      : 'C';
-
-    setUpdatingId(servico.id);
-    try {
-      const updated = await updateServicoRecorrente(servico.id, {
-        status: nextStatus,
-        data_fim: null,
-      });
-      setServicos((prev) => prev.map((item) => (item.id === servico.id ? updated : item)));
-      message.success(
-        isDone ? 'Conclusão desfeita com sucesso.' : 'Serviço marcado como concluído.'
+  const content = useMemo(() => {
+    if (loading) {
+      return (
+        <div className="w-full h-full flex items-center justify-center text-sm text-gray-700">
+          Carregando serviços recorrentes...
+        </div>
       );
-    } catch (error) {
-      console.error('Erro ao atualizar conclusão do serviço recorrente:', error);
-      message.error('Falha ao atualizar o status do serviço recorrente.');
-    } finally {
-      setUpdatingId(null);
     }
-  };
 
-  if (loading) {
+    if (error) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-center">
+          <div className="text-sm text-red-700">{error}</div>
+          <button
+            type="button"
+            className="px-3 py-1.5 rounded-md text-xs font-medium border border-gray-300 bg-white hover:bg-gray-50"
+            onClick={() => void loadInstancias()}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      );
+    }
+
+    if (instancias.length === 0) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-center">
+          <div className="text-sm text-gray-700">Nenhuma instância pendente encontrada.</div>
+          <button
+            type="button"
+            className="px-3 py-1.5 rounded-md text-xs font-medium border border-gray-300 bg-white hover:bg-gray-50"
+            onClick={() => void loadInstancias()}
+          >
+            Atualizar
+          </button>
+        </div>
+      );
+    }
+
     return (
-      <div className="w-full h-full flex items-center justify-center">
-        <Spin />
+      <div className="w-full h-full flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between pb-2 px-1">
+          <span className="text-xs font-medium text-gray-700">
+            {instancias.length} pendentes
+          </span>
+          <button
+            type="button"
+            className="px-2 py-1 rounded-md text-xs font-medium border border-gray-300 bg-white hover:bg-gray-50"
+            onClick={() => void loadInstancias()}
+          >
+            Atualizar
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2">
+          {instancias.map((instancia) => {
+            const tone = statusToTone(instancia.status);
+            const dueDateLabel = formatDueDate(instancia.dataVencimento, instancia.dataVencimentoRaw);
+            const canOpen = Boolean(instancia.actionUrl);
+
+            return (
+              <div
+                key={instancia.id}
+                className="rounded-lg border border-gray-200 bg-white/70 p-3 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-sm font-semibold text-gray-900 leading-5">{instancia.titulo}</h4>
+                  <span
+                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${badgeClasses[tone]}`}
+                  >
+                    {instancia.status}
+                  </span>
+                </div>
+
+                {instancia.descricao ? (
+                  <p className="mt-1 text-xs text-gray-600 line-clamp-2">{instancia.descricao}</p>
+                ) : null}
+
+                <div className="mt-2 text-xs text-gray-700">
+                  <span className="font-medium">Vencimento:</span> {dueDateLabel}
+                </div>
+
+                {instancia.contexto ? (
+                  <div className="mt-1 text-[11px] text-gray-500">{instancia.contexto}</div>
+                ) : null}
+
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    disabled={!canOpen}
+                    className="px-2 py-1 rounded-md text-xs font-medium border border-gray-300 bg-white hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => {
+                      if (canOpen) {
+                        window.open(instancia.actionUrl, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
+                  >
+                    {canOpen ? 'Abrir' : 'Sem link'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
-  }
+  }, [error, instancias, loadInstancias, loading]);
 
-  return (
-    <div className="servicos-recorrentes-widget w-full h-full flex flex-col overflow-hidden p-3 gap-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <Input
-          value={filterNome}
-          onChange={(event) => setFilterNome(event.target.value)}
-          placeholder="Buscar serviço recorrente"
-          allowClear
-          className="min-w-[220px] max-w-[360px] servicos-recorrentes-control"
-        />
-      </div>
-
-      {filteredServicos.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <Empty description="Nenhum serviço recorrente encontrado" />
-        </div>
-      ) : (
-        <div className="flex-1 min-h-0 overflow-auto pr-1">
-          <List
-            dataSource={filteredServicos}
-            split={false}
-            renderItem={(servico) => {
-              const done = servico.status === 'C';
-              const recorrenciaStatus = servico.recorrencia_status_reinicio ?? 'NI';
-              const intervalo = servico.recorrencia_intervalo_dias ?? 'Não definido';
-
-              return (
-                <List.Item className="!py-0 !mb-2">
-                  <Card className="w-full !rounded-lg !border-slate-200 !shadow-sm hover:!shadow-md transition-shadow">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <Text strong className="block text-sm truncate">
-                            {servico.nome}
-                          </Text>
-                          <Text type="secondary" className="text-[11px]">
-                            {getResponsavelNome(servico.responsavel_id)}
-                          </Text>
-                        </div>
-                        <Tag className="!m-0" color={statusColor[servico.status]}>
-                          {statusLabel(servico.status)}
-                        </Tag>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1 text-[11px]">
-                        <Tag className="!m-0">Intervalo: {intervalo}d</Tag>
-                        <Tag className="!m-0">Reinício: {statusLabel(recorrenciaStatus)}</Tag>
-                      </div>
-
-                      <div className="text-[11px] text-gray-500 leading-tight">
-                        <div>Último: {formatDateTime(servico.recorrencia_ultima_execucao)}</div>
-                        <div>Próximo: {formatDateTime(servico.recorrencia_proxima_execucao)}</div>
-                      </div>
-
-                      <Button
-                        size="small"
-                        type={done ? 'default' : 'primary'}
-                        icon={done ? <RollbackOutlined /> : <CheckCircleOutlined />}
-                        loading={updatingId === servico.id}
-                        onClick={() => handleToggleConclusao(servico)}
-                        className="self-end"
-                      >
-                        {done ? 'Desfazer' : 'Concluir'}
-                      </Button>
-                    </div>
-                  </Card>
-                </List.Item>
-              );
-            }}
-          />
-        </div>
-      )}
-    </div>
-  );
+  return <div className="w-full h-full min-h-0">{content}</div>;
 };
 
 export default ServicosRecorrentesWidget;
