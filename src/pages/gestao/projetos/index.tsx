@@ -4,11 +4,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createProjeto, getProjetos } from '../../../services/projetos';
 import { getUsuarios } from '../../../services/usuarios';
 import { getClientes } from '../../../services/clientes';
-import { Modal, Input, message, Select, Button, Space, Card, InputNumber } from 'antd';
+import { Modal, Input, message, Select, Button, Space, Card } from 'antd';
 import { PlusOutlined, FolderOpenOutlined, SearchOutlined, ClearOutlined } from '@ant-design/icons';
 
 import type { Usuario } from '../../../types/usuario'
-import type { Projeto, ProjetoCategoria, ProjetoPrioridade, ProjetoStatus } from '../../../types/projeto'
+import type { Projeto } from '../../../types/projeto'
 import type { Etapa } from '../../../types/etapa'
 import type { Cliente } from '../../../types/cliente'
 import { getEtapas } from '../../../services/etapas';
@@ -300,7 +300,8 @@ const ProjetosPage: React.FC = () => {
             !novoProjetoNome.trim() ||
             !novoProjetoResponsavel ||
             (isNovoProjetoServicoRecorrente &&
-              (!novoProjetoRecorrenciaIntervaloDias || novoProjetoRecorrenciaIntervaloDias <= 0))
+              novoProjetoFrequencia === 'INTERVAL_DAYS' &&
+              (!novoProjetoIntervaloDias || novoProjetoIntervaloDias <= 0))
         }}
         cancelButtonProps={{ size: 'large' }}
       >
@@ -540,30 +541,14 @@ const ProjetosPage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       🔁 Intervalo de Reinício (dias) <span className="text-red-500">*</span>
                     </label>
-                    <InputNumber
+                    <Input
+                      type="number"
                       min={1}
-                      value={novoProjetoRecorrenciaIntervaloDias ?? undefined}
-                      onChange={(value) => setNovoProjetoRecorrenciaIntervaloDias(value === null ? null : Number(value))}
+                      value={novoProjetoIntervaloDias ?? ''}
+                      onChange={e => setNovoProjetoIntervaloDias(e.target.value ? Number(e.target.value) : null)}
                       size="large"
                       style={{ width: '100%' }}
                       placeholder="Ex.: 30"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estado Após Reinício
-                    </label>
-                    <Select
-                      value={novoProjetoRecorrenciaStatusReinicio}
-                      onChange={setNovoProjetoRecorrenciaStatusReinicio}
-                      size="large"
-                      style={{ width: '100%' }}
-                      options={[
-                        { value: 'NI', label: '⏸️ Não Iniciado' },
-                        { value: 'EA', label: '▶️ Em Andamento' },
-                        { value: 'P', label: '⏸️ Pausado' },
-                        { value: 'C', label: '✅ Concluído' },
-                      ]}
                     />
                   </div>
                 </>
