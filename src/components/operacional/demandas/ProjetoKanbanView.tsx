@@ -49,6 +49,7 @@ const ProjetoKanbanView: React.FC<ProjetoKanbanViewProps> = ({
     ES: { label: 'Escrituração', color: 'gold', shortLabel: 'ES' },
     RA: { label: 'Radar', color: 'lime', shortLabel: 'RA' },
     ST: { label: 'Solicitação TTD', color: 'volcano', shortLabel: 'ST' },
+    SR: { label: 'Serviço Recorrente', color: 'cyan', shortLabel: 'SR' },
     OT: { label: 'Outro', color: 'default', shortLabel: 'OT' },
   };
 

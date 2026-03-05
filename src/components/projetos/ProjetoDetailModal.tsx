@@ -96,6 +96,7 @@ const categoryOptions = [
     { value: 'ES', label: 'Escrituração' },
     { value: 'RA', label: 'Radar' },
     { value: 'ST', label: 'Solicitação TTD' },
+    { value: 'SR', label: 'Serviço Recorrente' },
     { value: 'OT', label: 'Outro' },
 ];
 

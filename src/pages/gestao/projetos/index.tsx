@@ -4,11 +4,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createProjeto, getProjetos } from '../../../services/projetos';
 import { getUsuarios } from '../../../services/usuarios';
 import { getClientes } from '../../../services/clientes';
-import { Modal, Input, message, Select, Button, Space, Card } from 'antd';
+import { Modal, Input, message, Select, Button, Space, Card, InputNumber } from 'antd';
 import { PlusOutlined, FolderOpenOutlined, SearchOutlined, ClearOutlined } from '@ant-design/icons';
 
 import type { Usuario } from '../../../types/usuario'
-import type { Projeto } from '../../../types/projeto'
+import type { Projeto, ProjetoCategoria, ProjetoPrioridade, ProjetoStatus } from '../../../types/projeto'
 import type { Etapa } from '../../../types/etapa'
 import type { Cliente } from '../../../types/cliente'
 import { getEtapas } from '../../../services/etapas';
@@ -78,9 +78,9 @@ const ProjetosPage: React.FC = () => {
   }, [fetchData]);
   const [showProjetoModal, setShowProjetoModal] = useState(false);
   const [novoProjetoNome, setNovoProjetoNome] = useState('');
-  const [novoProjetoPrioridade, setNovoProjetoPrioridade] = useState<'UT' | 'AL' | 'MD' | 'BA'>('MD');
-  const [novoProjetoStatus, setNovoProjetoStatus] = useState<'NI' | 'EA' | 'C' | 'P'>('NI');
-  const [novoProjetoCategoria, setNovoProjetoCategoria] = useState<'CP' | 'RC' | 'AO' | 'AU' | 'CM' | 'PL' | 'CO' | 'ES' | 'RA' | 'ST' | 'OT'>('OT');
+  const [novoProjetoPrioridade, setNovoProjetoPrioridade] = useState<ProjetoPrioridade>('MD');
+  const [novoProjetoStatus, setNovoProjetoStatus] = useState<ProjetoStatus>('NI');
+  const [novoProjetoCategoria, setNovoProjetoCategoria] = useState<ProjetoCategoria>('OT');
   const [novoProjetoResponsavel, setNovoProjetoResponsavel] = useState<number | undefined>(usuarios[0]?.id);
   const [novoProjetoClienteId, setNovoProjetoClienteId] = useState<number | undefined>(undefined);
   const [novoProjetoUsuariosAnexados, setNovoProjetoUsuariosAnexados] = useState<number[]>([]);
@@ -88,6 +88,8 @@ const ProjetosPage: React.FC = () => {
   const [novoProjetoDataInicio, setNovoProjetoDataInicio] = useState<string | null>(null);
   const [novoProjetoDataPrazo, setNovoProjetoDataPrazo] = useState<string | null>(null);
   const [novoProjetoDataFim, setNovoProjetoDataFim] = useState<string | null>(null);
+  const [novoProjetoRecorrenciaIntervaloDias, setNovoProjetoRecorrenciaIntervaloDias] = useState<number | null>(30);
+  const [novoProjetoRecorrenciaStatusReinicio, setNovoProjetoRecorrenciaStatusReinicio] = useState<ProjetoStatus>('NI');
   const [novoEtapaNome, setNovoEtapaNome] = useState('');
   const [detailModalProjeto, setDetailModalProjeto] = useState<Projeto | null>(null);
   const [detailModalEtapa, setDetailModalEtapa] = useState<EtapaWithProjeto | null>(null);
@@ -122,6 +124,11 @@ const ProjetosPage: React.FC = () => {
 
   const handleAddProjeto = async () => {
     if (novoProjetoNome.trim()) {
+      if (novoProjetoCategoria === 'SR' && (!novoProjetoRecorrenciaIntervaloDias || novoProjetoRecorrenciaIntervaloDias <= 0)) {
+        message.warning('Informe o intervalo de recorrência (em dias) para o serviço recorrente.');
+        return;
+      }
+
       setLoading(true);
       try {
         await createProjeto({
@@ -134,8 +141,13 @@ const ProjetosPage: React.FC = () => {
           usuarios_anexados: novoProjetoUsuariosAnexados,
           descricao: novoProjetoDescricao,
           data_inicio: novoProjetoDataInicio,
-          data_prazo: novoProjetoDataPrazo,
-          data_fim: novoProjetoDataFim,
+          data_prazo: novoProjetoCategoria === 'SR' ? null : novoProjetoDataPrazo,
+          data_fim: novoProjetoCategoria === 'SR' ? null : novoProjetoDataFim,
+          recorrencia_ativa: novoProjetoCategoria === 'SR' ? true : undefined,
+          recorrencia_intervalo_dias:
+            novoProjetoCategoria === 'SR' ? novoProjetoRecorrenciaIntervaloDias : undefined,
+          recorrencia_status_reinicio:
+            novoProjetoCategoria === 'SR' ? novoProjetoRecorrenciaStatusReinicio : undefined,
           anexados: [],
           etapas: [],
         });
@@ -150,6 +162,8 @@ const ProjetosPage: React.FC = () => {
         setNovoProjetoDataInicio(null);
         setNovoProjetoDataPrazo(null);
         setNovoProjetoDataFim(null);
+        setNovoProjetoRecorrenciaIntervaloDias(30);
+        setNovoProjetoRecorrenciaStatusReinicio('NI');
         setShowProjetoModal(false);
         message.success('Projeto criado com sucesso!');
         fetchData();
@@ -213,6 +227,8 @@ const ProjetosPage: React.FC = () => {
     (!filterResponsavel || p.responsavel_id === filterResponsavel) &&
     (!filterClienteId || p.cliente_id === filterClienteId)
   );
+  const isNovoProjetoServicoRecorrente = novoProjetoCategoria === 'SR';
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* Page Content */}
@@ -253,6 +269,8 @@ const ProjetosPage: React.FC = () => {
           setNovoProjetoDataInicio(null);
           setNovoProjetoDataPrazo(null);
           setNovoProjetoDataFim(null);
+          setNovoProjetoRecorrenciaIntervaloDias(30);
+          setNovoProjetoRecorrenciaStatusReinicio('NI');
         }}
         onOk={handleAddProjeto}
         okText="Criar Projeto"
@@ -261,7 +279,11 @@ const ProjetosPage: React.FC = () => {
         style={{ top: 20 }}
         okButtonProps={{ 
           size: 'large',
-          disabled: !novoProjetoNome.trim() || !novoProjetoResponsavel
+          disabled:
+            !novoProjetoNome.trim() ||
+            !novoProjetoResponsavel ||
+            (isNovoProjetoServicoRecorrente &&
+              (!novoProjetoRecorrenciaIntervaloDias || novoProjetoRecorrenciaIntervaloDias <= 0))
         }}
         cancelButtonProps={{ size: 'large' }}
       >
@@ -309,6 +331,7 @@ const ProjetosPage: React.FC = () => {
                     { value: 'ES', label: '📝 Escrituração' },
                     { value: 'RA', label: '🚚 Radar' },
                     { value: 'ST', label: '📄 Solicitação TTD' },
+                    { value: 'SR', label: '🔁 Serviço Recorrente' },
                     { value: 'OT', label: '📋 Outro' },
                   ]}
                 />
@@ -426,9 +449,9 @@ const ProjetosPage: React.FC = () => {
           {/* Timeline Section */}
           <div>
             <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
-              Cronograma
+              {isNovoProjetoServicoRecorrente ? 'Recorrência' : 'Cronograma'}
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`grid grid-cols-1 ${isNovoProjetoServicoRecorrente ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   📅 Data de Início
@@ -441,29 +464,66 @@ const ProjetosPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ⏰ Prazo Final
-                </label>
-                <Input
-                  type="date"
-                  value={novoProjetoDataPrazo || ''}
-                  onChange={e => setNovoProjetoDataPrazo(e.target.value || null)}
-                  size="large"
-                />
-              </div>
+              {isNovoProjetoServicoRecorrente ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🔁 Intervalo de Reinício (dias) <span className="text-red-500">*</span>
+                    </label>
+                    <InputNumber
+                      min={1}
+                      value={novoProjetoRecorrenciaIntervaloDias ?? undefined}
+                      onChange={(value) => setNovoProjetoRecorrenciaIntervaloDias(value === null ? null : Number(value))}
+                      size="large"
+                      style={{ width: '100%' }}
+                      placeholder="Ex.: 30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Estado Após Reinício
+                    </label>
+                    <Select
+                      value={novoProjetoRecorrenciaStatusReinicio}
+                      onChange={setNovoProjetoRecorrenciaStatusReinicio}
+                      size="large"
+                      style={{ width: '100%' }}
+                      options={[
+                        { value: 'NI', label: '⏸️ Não Iniciado' },
+                        { value: 'EA', label: '▶️ Em Andamento' },
+                        { value: 'P', label: '⏸️ Pausado' },
+                        { value: 'C', label: '✅ Concluído' },
+                      ]}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ⏰ Prazo Final
+                    </label>
+                    <Input
+                      type="date"
+                      value={novoProjetoDataPrazo || ''}
+                      onChange={e => setNovoProjetoDataPrazo(e.target.value || null)}
+                      size="large"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  🏁 Data de Conclusão
-                </label>
-                <Input
-                  type="date"
-                  value={novoProjetoDataFim || ''}
-                  onChange={e => setNovoProjetoDataFim(e.target.value || null)}
-                  size="large"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🏁 Data de Conclusão
+                    </label>
+                    <Input
+                      type="date"
+                      value={novoProjetoDataFim || ''}
+                      onChange={e => setNovoProjetoDataFim(e.target.value || null)}
+                      size="large"
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -495,6 +555,7 @@ const ProjetosPage: React.FC = () => {
                 <h4 className="text-sm font-semibold text-blue-800 mb-2">Dicas Rápidas:</h4>
                 <ul className="text-xs text-blue-700 space-y-1">
                   <li>• Projetos de <strong>Compensação</strong> requerem um cliente associado</li>
+                  <li>• <strong>Serviços Recorrentes</strong> não usam prazo final nem data de conclusão</li>
                   <li>• Use nomes descritivos para facilitar a identificação</li>
                   <li>• A equipe pode ser modificada posteriormente no detalhamento do projeto</li>
                   <li>• Defina prazos realistas considerando a complexidade do projeto</li>
@@ -546,6 +607,7 @@ const ProjetosPage: React.FC = () => {
                 { value: 'ES', label: 'Escrituração' },
                 { value: 'RA', label: 'Radar' },
                 { value: 'ST', label: 'Solicitação TTD' },
+                { value: 'SR', label: 'Serviço Recorrente' },
                 { value: 'OT', label: 'Outro' },
               ]}
             />
