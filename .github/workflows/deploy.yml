@@ -1,33 +1,61 @@
+name: Deploy Local
+
 on:
-  push:
-    branches:
-      - master  # change if you use another branch
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
-      DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
+      IMAGE_NAME: react-kb-app:latest
+      CONTAINER_NAME: react-kb-app
+      HOST_PORT: "5173"
+      CONTAINER_PORT: "5173"
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.key_passphrase }}
-          tty: true
-          script: |
-            cd /var/www/react-kb
-            branch="${DEPLOY_BRANCH:-master}"
-            git fetch origin "$branch"
-            git reset --hard "origin/$branch"
-            npm install
-            npm run build
-            sudo systemctl reload nginx
+          fetch-depth: 0
+
+      - name: Pull latest master from pedroKomcorp/react-kb
+        env:
+          PULL_TOKEN: ${{ secrets.PULL_TOKEN }}
+        run: |
+          if [ -n "${PULL_TOKEN}" ]; then
+            REMOTE_URL="https://x-access-token:${PULL_TOKEN}@github.com/pedroKomcorp/react-kb.git"
+          else
+            REMOTE_URL="https://github.com/pedroKomcorp/react-kb.git"
+          fi
+
+          git remote set-url origin "${REMOTE_URL}"
+          git fetch --prune origin master
+          git checkout -B master origin/master
+          git reset --hard origin/master
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Docker image
+        run: docker build -t "${IMAGE_NAME}" .
+
+      - name: Recreate container open to local network
+        run: |
+          docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
+          docker run -d \
+            --name "${CONTAINER_NAME}" \
+            --restart unless-stopped \
+            -p "0.0.0.0:${HOST_PORT}:${CONTAINER_PORT}" \
+            "${IMAGE_NAME}"
+
+      - name: Show running container
+        run: docker ps --filter "name=${CONTAINER_NAME}" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
 
             
