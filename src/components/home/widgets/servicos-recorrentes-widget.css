@@ -1,0 +1,57 @@
+.servicos-recorrentes-widget .ant-input {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.servicos-recorrentes-widget .ant-input-affix-wrapper {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.servicos-recorrentes-widget .ant-input-affix-wrapper .ant-input {
+  background: transparent;
+  border: none;
+}
+
+.servicos-recorrentes-widget .ant-input-affix-wrapper .ant-input-suffix,
+.servicos-recorrentes-widget .ant-input-affix-wrapper .ant-input-clear-icon {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.servicos-recorrentes-widget .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.servicos-recorrentes-widget .ant-input-affix-wrapper:hover,
+.servicos-recorrentes-widget .ant-input-affix-wrapper-focused {
+  border-color: rgba(255, 255, 255, 0.42) !important;
+}
+
+.servicos-recorrentes-widget .ant-select .ant-select-selector {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.servicos-recorrentes-widget .ant-select .ant-select-selection-item,
+.servicos-recorrentes-widget .ant-select .ant-select-selection-placeholder,
+.servicos-recorrentes-widget .ant-select .ant-select-arrow {
+  color: #fff !important;
+}
+
+.servicos-recorrentes-select-dropdown.ant-select-dropdown {
+  background: #1f1e27;
+}
+
+.servicos-recorrentes-select-dropdown .ant-select-item {
+  color: #fff;
+}
+
+.servicos-recorrentes-select-dropdown .ant-select-item-option-active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.servicos-recorrentes-select-dropdown .ant-select-item-option-selected {
+  background: rgba(255, 255, 255, 0.2);
+}

@@ -11,6 +11,7 @@ import EtapaDetailModal from '../../etapas/EtapaDetailModal';
 import type { Projeto } from '../../../types/projeto';
 import type { Usuario } from '../../../types/usuario';
 import type { Etapa } from '../../../types/etapa';
+import './projetos-widget.css';
 
 
 const ProjetosWidget: React.FC = () => {
@@ -255,33 +256,16 @@ const ProjetosWidget: React.FC = () => {
 			}, [projetosFiltrados.length, cardWidth]);
 
 		return (
-			<div className="w-full h-full overflow-hidden flex flex-col" style={{ padding: 0 }}>
+			<div className="projetos-widget w-full h-full overflow-hidden flex flex-col" style={{ padding: 0 }}>
 				{/* Enhanced Filter Section */}
 				<div className="flex-shrink-0 px-3 py-3" style={{ backgroundColor: 'transparent' }}>
-					<style>{`
-						.filter-input-dark::placeholder {
-							color: #4B5563 !important;
-							opacity: 1 !important;
-						}
-						.ant-select-selection-placeholder {
-							color: #4B5563 !important;
-							opacity: 1 !important;
-						}
-					`}</style>
 					<div className="flex flex-wrap gap-3 items-center">
 						<Input
 							size="large"
 							placeholder="🔍 Buscar projeto..."
 							value={nome}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value)}
-							className="flex-1 min-w-[180px] max-w-[300px] filter-input-dark"
-							style={{ 
-								borderRadius: '8px',
-								borderColor: '#BA8364',
-								borderWidth: '2px',
-								backgroundColor: 'white',
-								fontSize: '14px'
-							}}
+							className="flex-1 min-w-[180px] max-w-[300px] projetos-widget-control"
 							allowClear
 						/>
 						<Select
@@ -290,18 +274,14 @@ const ProjetosWidget: React.FC = () => {
 							value={status}
 							onChange={setStatus}
 							options={statusOptions}
-							className="min-w-[140px]"
-							style={{ 
-								borderRadius: '8px',
-								fontSize: '14px',
-								backgroundColor: 'white'
-							}}
+							className="min-w-[140px] projetos-widget-control"
+							popupClassName="projetos-widget-select-dropdown"
 							showArrow
 							allowClear
 							placeholder="📊 Status"
 							maxTagCount={0}
 							maxTagPlaceholder={(omittedValues) => (
-								<span className="text-xs font-medium" style={{ color: '#BA8364' }}>
+								<span className="text-xs font-medium text-white/85">
 									{omittedValues.length} selecionado(s)
 								</span>
 							)}
@@ -312,18 +292,14 @@ const ProjetosWidget: React.FC = () => {
 							value={categoria}
 							onChange={setCategoria}
 							options={categoriaOptions}
-							className="min-w-[140px]"
-							style={{ 
-								borderRadius: '8px',
-								fontSize: '14px',
-								backgroundColor: 'white'
-							}}
+							className="min-w-[140px] projetos-widget-control"
+							popupClassName="projetos-widget-select-dropdown"
 							showArrow
 							allowClear
 							placeholder="📁 Categoria"
 							maxTagCount={0}
 							maxTagPlaceholder={(omittedValues) => (
-								<span className="text-xs font-medium" style={{ color: '#BA8364' }}>
+								<span className="text-xs font-medium text-white/85">
 									{omittedValues.length} selecionada(s)
 								</span>
 							)}
@@ -334,18 +310,14 @@ const ProjetosWidget: React.FC = () => {
 							value={prioridade}
 							onChange={setPrioridade}
 							options={prioridadeOptions}
-							className="min-w-[140px]"
-							style={{ 
-								borderRadius: '8px',
-								fontSize: '14px',
-								backgroundColor: 'white'
-							}}
+							className="min-w-[140px] projetos-widget-control"
+							popupClassName="projetos-widget-select-dropdown"
 							showArrow
 							allowClear
 							placeholder="⚡ Prioridade"
 							maxTagCount={0}
 							maxTagPlaceholder={(omittedValues) => (
-								<span className="text-xs font-medium" style={{ color: '#BA8364' }}>
+								<span className="text-xs font-medium text-white/85">
 									{omittedValues.length} selecionada(s)
 								</span>
 							)}
