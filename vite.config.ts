@@ -8,7 +8,6 @@ export default defineConfig(({  }) => {
   return {
     server: {
       host: "0.0.0.0",
-      port: 5147,
     },
     plugins,
     build: {
