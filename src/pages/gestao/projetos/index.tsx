@@ -4,11 +4,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createProjeto, getProjetos } from '../../../services/projetos';
 import { getUsuarios } from '../../../services/usuarios';
 import { getClientes } from '../../../services/clientes';
-import { Modal, Input, message, Select, Button, Space, Card, InputNumber } from 'antd';
+import { Modal, Input, message, Select, Button, Space, Card } from 'antd';
 import { PlusOutlined, FolderOpenOutlined, SearchOutlined, ClearOutlined } from '@ant-design/icons';
 
 import type { Usuario } from '../../../types/usuario'
-import type { Projeto, ProjetoCategoria, ProjetoPrioridade, ProjetoStatus } from '../../../types/projeto'
+import type { Projeto } from '../../../types/projeto'
 import type { Etapa } from '../../../types/etapa'
 import type { Cliente } from '../../../types/cliente'
 import { getEtapas } from '../../../services/etapas';
@@ -300,7 +300,8 @@ const ProjetosPage: React.FC = () => {
             !novoProjetoNome.trim() ||
             !novoProjetoResponsavel ||
             (isNovoProjetoServicoRecorrente &&
-              (!novoProjetoRecorrenciaIntervaloDias || novoProjetoRecorrenciaIntervaloDias <= 0))
+              novoProjetoFrequencia === 'INTERVAL_DAYS' &&
+              (!novoProjetoIntervaloDias || novoProjetoIntervaloDias <= 0))
         }}
         cancelButtonProps={{ size: 'large' }}
       >
@@ -521,7 +522,7 @@ const ProjetosPage: React.FC = () => {
             <h3 className="text-base font-semibold mb-4 text-gray-800 border-b pb-2">
               {isNovoProjetoServicoRecorrente ? 'Recorrência' : 'Cronograma'}
             </h3>
-            <div className={`grid grid-cols-1 ${isNovoProjetoServicoRecorrente ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
+            <div className={`grid grid-cols-1 ${isNovoProjetoServicoRecorrente ? 'md:grid-cols-1' : 'md:grid-cols-3'} gap-4`}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   📅 Data de Início
@@ -534,40 +535,7 @@ const ProjetosPage: React.FC = () => {
                 />
               </div>
 
-              {isNovoProjetoServicoRecorrente ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      🔁 Intervalo de Reinício (dias) <span className="text-red-500">*</span>
-                    </label>
-                    <InputNumber
-                      min={1}
-                      value={novoProjetoRecorrenciaIntervaloDias ?? undefined}
-                      onChange={(value) => setNovoProjetoRecorrenciaIntervaloDias(value === null ? null : Number(value))}
-                      size="large"
-                      style={{ width: '100%' }}
-                      placeholder="Ex.: 30"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estado Após Reinício
-                    </label>
-                    <Select
-                      value={novoProjetoRecorrenciaStatusReinicio}
-                      onChange={setNovoProjetoRecorrenciaStatusReinicio}
-                      size="large"
-                      style={{ width: '100%' }}
-                      options={[
-                        { value: 'NI', label: '⏸️ Não Iniciado' },
-                        { value: 'EA', label: '▶️ Em Andamento' },
-                        { value: 'P', label: '⏸️ Pausado' },
-                        { value: 'C', label: '✅ Concluído' },
-                      ]}
-                    />
-                  </div>
-                </>
-              ) : (
+              {!isNovoProjetoServicoRecorrente && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
