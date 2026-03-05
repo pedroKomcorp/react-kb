@@ -15,13 +15,13 @@ export type CategoriaProjeto =
   | 'SR'
   | 'OT';
 
-export type FrequenciaRecorrenciaProjeto = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'INTERVAL_DAYS';
+export type StatusProjeto = 'NI' | 'EA' | 'C' | 'P';
 
 export type Projeto = {
   id: number;
   nome: string;
   prioridade: 'UT' | 'AL' | 'MD' | 'BA';
-  status: 'NI' | 'EA' | 'C' | 'P';
+  status: StatusProjeto;
   categoria: CategoriaProjeto;
   responsavel_id: number;
   cliente_id?: number | null;
@@ -29,9 +29,11 @@ export type Projeto = {
   data_inicio?: string | null;
   data_prazo?: string | null;
   data_fim?: string | null;
-  frequencia?: FrequenciaRecorrenciaProjeto;
-  intervalo_dias?: number | null;
-  data_inicio_recorrencia?: string | null;
+  recorrencia_ativa?: boolean | null;
+  recorrencia_intervalo_dias?: number | null;
+  recorrencia_status_reinicio?: StatusProjeto | null;
+  recorrencia_ultima_execucao?: string | null;
+  recorrencia_proxima_execucao?: string | null;
   anexados: AnexadoUser[]; // Use the interface we defined above
   etapas?: Etapa[];
   usuarios_anexados?: number[]; // IDs of attached users

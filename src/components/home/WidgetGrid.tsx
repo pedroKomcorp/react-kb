@@ -16,6 +16,7 @@ type DynamicLayoutMap = { [key: string]: Layout[] };
 
 const widgetComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   projetos: lazy(() => import('./widgets/ProjetosWidget')),
+  servicos_recorrentes: lazy(() => import('./widgets/ServicosRecorrentesWidget')),
   calendario: lazy(() => import('./widgets/CalendarioWidget')),
   listas_tarefas: lazy(() => import('./widgets/ListasTarefasWidget')),
   bloco: lazy(() => import('./widgets/BlocoNotasWidget')),

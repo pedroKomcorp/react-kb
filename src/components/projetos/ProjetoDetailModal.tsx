@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, List, Button, Input, Select, Space, Typography, Popconfirm, Descriptions, Tag, message, InputNumber, Form } from 'antd';
+import { Modal, List, Button, Input, Select, Space, Typography, Popconfirm, Descriptions, Tag, message, InputNumber, Form, Switch } from 'antd';
 import { 
   FolderOpenOutlined, 
   EditOutlined, 
@@ -100,24 +100,24 @@ const categoryOptions = [
     { value: 'OT', label: 'Outro' },
 ];
 
-const recorrenciaOptions: { value: NonNullable<Projeto['frequencia']>; label: string }[] = [
-  { value: 'DAILY', label: 'Diária' },
-  { value: 'WEEKLY', label: 'Semanal' },
-  { value: 'MONTHLY', label: 'Mensal' },
-  { value: 'INTERVAL_DAYS', label: 'Intervalo de Dias' },
+const recorrenciaStatusReinicioOptions: { value: NonNullable<Projeto['recorrencia_status_reinicio']>; label: string }[] = [
+  { value: 'NI', label: 'Não Iniciado' },
+  { value: 'EA', label: 'Em Andamento' },
+  { value: 'P', label: 'Pausado' },
+  { value: 'C', label: 'Concluído' },
 ];
-
-const recorrenciaLabelMap: Record<NonNullable<Projeto['frequencia']>, string> = {
-  DAILY: 'Diária',
-  WEEKLY: 'Semanal',
-  MONTHLY: 'Mensal',
-  INTERVAL_DAYS: 'Intervalo de Dias',
-};
 
 // Helper to format date for input[type="date"]
 const formatDateForInput = (dateString: string | null | undefined): string => {
   if (!dateString) return '';
   return dateString.split('T')[0];
+};
+
+const formatDateTime = (dateString: string | null | undefined): string => {
+  if (!dateString) return '-';
+  const parsed = new Date(dateString);
+  if (Number.isNaN(parsed.getTime())) return dateString;
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(parsed);
 };
 
 
@@ -602,15 +602,21 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
         return {
           ...p,
           categoria,
-          frequencia: p.frequencia || 'MONTHLY',
+          data_prazo: null,
+          data_fim: null,
+          recorrencia_ativa: p.recorrencia_ativa ?? true,
+          recorrencia_intervalo_dias: p.recorrencia_intervalo_dias ?? 30,
+          recorrencia_status_reinicio: p.recorrencia_status_reinicio || 'NI',
         };
       }
       return {
         ...p,
         categoria,
-        frequencia: undefined,
-        intervalo_dias: undefined,
-        data_inicio_recorrencia: undefined,
+        recorrencia_ativa: undefined,
+        recorrencia_intervalo_dias: undefined,
+        recorrencia_status_reinicio: undefined,
+        recorrencia_ultima_execucao: undefined,
+        recorrencia_proxima_execucao: undefined,
       };
     });
   };
@@ -845,40 +851,33 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
 
           {editedProjeto.categoria === 'SR' && (
             <>
-              <Descriptions.Item label="Frequência">
+              <Descriptions.Item label="Recorrência ativa">
                 {isEditingProjeto ? (
-                  <Select
-                    value={editedProjeto.frequencia}
-                    onChange={val =>
+                  <Switch
+                    checked={editedProjeto.recorrencia_ativa ?? true}
+                    onChange={(checked) =>
                       setEditedProjeto(p =>
-                        p
-                          ? {
-                              ...p,
-                              frequencia: val,
-                              intervalo_dias: val === 'INTERVAL_DAYS' ? p.intervalo_dias : undefined,
-                            }
-                          : null
+                        p ? { ...p, recorrencia_ativa: checked } : null
                       )
                     }
-                    options={recorrenciaOptions}
-                    style={{ width: '100%' }}
                   />
                 ) : (
-                  (editedProjeto.frequencia && recorrenciaLabelMap[editedProjeto.frequencia]) || '-'
+                  <Tag color={editedProjeto.recorrencia_ativa === false ? 'default' : 'success'}>
+                    {editedProjeto.recorrencia_ativa === false ? 'Inativa' : 'Ativa'}
+                  </Tag>
                 )}
               </Descriptions.Item>
               <Descriptions.Item label="Intervalo (dias)">
                 {isEditingProjeto ? (
                   <InputNumber
                     min={1}
-                    disabled={editedProjeto.frequencia !== 'INTERVAL_DAYS'}
-                    value={editedProjeto.frequencia === 'INTERVAL_DAYS' ? editedProjeto.intervalo_dias ?? undefined : undefined}
+                    value={editedProjeto.recorrencia_intervalo_dias ?? undefined}
                     onChange={val =>
                       setEditedProjeto(p =>
                         p
                           ? {
                               ...p,
-                              intervalo_dias: p.frequencia === 'INTERVAL_DAYS' ? (typeof val === 'number' ? val : null) : undefined,
+                              recorrencia_intervalo_dias: typeof val === 'number' ? val : null,
                             }
                           : null
                       )
@@ -887,23 +886,32 @@ const ProjetoDetailModal: React.FC<ProjetoDetailModalProps> = ({
                     placeholder="Ex.: 15"
                   />
                 ) : (
-                  editedProjeto.frequencia === 'INTERVAL_DAYS' ? (editedProjeto.intervalo_dias ?? '-') : '-'
+                  editedProjeto.recorrencia_intervalo_dias ?? '-'
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label="Data de Início da Recorrência" span={2}>
+              <Descriptions.Item label="Status ao reiniciar">
                 {isEditingProjeto ? (
-                  <Input
-                    type="date"
-                    value={formatDateForInput(editedProjeto.data_inicio_recorrencia)}
-                    onChange={e =>
+                  <Select
+                    value={editedProjeto.recorrencia_status_reinicio ?? 'NI'}
+                    onChange={val =>
                       setEditedProjeto(p =>
-                        p ? { ...p, data_inicio_recorrencia: e.target.value || null } : null
+                        p ? { ...p, recorrencia_status_reinicio: val } : null
                       )
                     }
+                    options={recorrenciaStatusReinicioOptions}
+                    style={{ width: '100%' }}
                   />
                 ) : (
-                  formatDateForInput(editedProjeto.data_inicio_recorrencia) || '-'
+                  recorrenciaStatusReinicioOptions.find(
+                    (option) => option.value === editedProjeto.recorrencia_status_reinicio
+                  )?.label || '-'
                 )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Última execução" span={1}>
+                {formatDateTime(editedProjeto.recorrencia_ultima_execucao)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Próxima execução" span={1}>
+                {formatDateTime(editedProjeto.recorrencia_proxima_execucao)}
               </Descriptions.Item>
             </>
           )}

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-export type HomeWidgetKey = 'projetos' | 'listas_tarefas' | 'calendario';
+export type HomeWidgetKey = 'projetos' | 'listas_tarefas' | 'calendario' | 'servicos_recorrentes';
 
 interface HomeWidgetOption {
   label: string;
@@ -15,11 +15,17 @@ interface HomeWidgetsContextType {
 }
 
 const WIDGET_SELECTOR_STORAGE_KEY = 'home_selected_widgets_v1';
-const DEFAULT_WIDGET_KEYS: HomeWidgetKey[] = ['projetos', 'listas_tarefas', 'calendario'];
+const DEFAULT_WIDGET_KEYS: HomeWidgetKey[] = [
+  'projetos',
+  'servicos_recorrentes',
+  'listas_tarefas',
+  'calendario',
+];
 const ALLOWED_KEYS = new Set<HomeWidgetKey>(DEFAULT_WIDGET_KEYS);
 
 const WIDGET_OPTIONS: HomeWidgetOption[] = [
   { label: 'Projetos', value: 'projetos' },
+  { label: 'Serviços Recorrentes', value: 'servicos_recorrentes' },
   { label: 'Listas de Tarefas', value: 'listas_tarefas' },
   { label: 'Calendário', value: 'calendario' },
 ];
@@ -50,7 +56,15 @@ export const HomeWidgetsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
 
       const parsed = normalizeHomeWidgetKeys(JSON.parse(stored));
-      return parsed.length ? parsed : DEFAULT_WIDGET_KEYS;
+      if (!parsed.length) {
+        return DEFAULT_WIDGET_KEYS;
+      }
+
+      if (!parsed.includes('servicos_recorrentes')) {
+        return [...parsed, 'servicos_recorrentes'];
+      }
+
+      return parsed;
     } catch (error) {
       console.warn('Falha ao carregar widgets selecionados:', error);
       return DEFAULT_WIDGET_KEYS;
