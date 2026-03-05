@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://192.168.1.150:8000}
     ports:
-      - "0.0.0.0:5173:5173"
+      - "192.168.1.150:80:5173"
+      - "[::]:80:5173"
     restart: unless-stopped
