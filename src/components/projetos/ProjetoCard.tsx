@@ -39,7 +39,7 @@ const categoriaMap: Record<string, { color: string; label: string }> = {
   ES: { color: 'gold', label: 'Escrituração' },
   RA: { color: 'lime', label: 'Radar' },
   ST: { color: 'volcano', label: 'Solicitação TTD' },
-  SR: { color: 'cyan', label: 'Serviço Recorrente' },
+  SR: { color: 'blue', label: 'Serviços Recorrentes' },
   OT: { color: 'default', label: 'Outro' },
 };
 

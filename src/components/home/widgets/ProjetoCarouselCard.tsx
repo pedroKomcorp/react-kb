@@ -87,7 +87,7 @@ const ProjetoCarouselCard: React.FC<ProjetoCarouselCardProps> = ({ projeto, usua
     'ES': { label: 'Escrituração', abbrev: 'ES', bgColor: 'bg-fuchsia-100', textColor: 'text-fuchsia-700' },
     'RA': { label: 'Radar', abbrev: 'RA', bgColor: 'bg-lime-100', textColor: 'text-lime-700' },
     'ST': { label: 'Solicitação TTD', abbrev: 'ST', bgColor: 'bg-amber-100', textColor: 'text-amber-700' },
-    'SR': { label: 'Serviço Recorrente', abbrev: 'SR', bgColor: 'bg-emerald-100', textColor: 'text-emerald-700' },
+    'SR': { label: 'Serviços Recorrentes', abbrev: 'SR', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
     'OT': { label: 'Outro', abbrev: 'OT', bgColor: 'bg-gray-100', textColor: 'text-gray-700' },
   };
 
