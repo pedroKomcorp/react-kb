@@ -8,6 +8,7 @@ import { getUsuarios } from '../../../services/usuarios';
 import { updateProjeto } from '../../../services/projetos';
 import { createEtapa, updateEtapa, deleteEtapa } from '../../../services/etapas';
 import type { Usuario } from '../../../types/usuario';
+import './calendario-widget.css';
 
 const ProjetoCalendarView = lazy(() => import('../../operacional/demandas/ProjetoCalendarView'));
 const ProjetoDetailModal = lazy(() => import('../../projetos/ProjetoDetailModal'));
@@ -182,7 +183,7 @@ const CalendarioWidget: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
+    <div className="calendario-widget w-full h-full flex flex-col overflow-hidden">
       {/* Filters */}
       <div className="flex gap-2 mb-3 items-center flex-shrink-0 px-2">
         <Select
@@ -191,7 +192,8 @@ const CalendarioWidget: React.FC = () => {
           value={statusFilter}
           onChange={setStatusFilter}
           options={statusOptions}
-          className="min-w-[120px]"
+          className="min-w-[120px] calendario-widget-control"
+          popupClassName="calendario-widget-select-dropdown"
         />
         <Select
           size="small"
@@ -199,7 +201,8 @@ const CalendarioWidget: React.FC = () => {
           value={projetoFilter}
           onChange={setProjetoFilter}
           options={projetoOptions}
-          className="min-w-[150px] flex-1"
+          className="min-w-[150px] flex-1 calendario-widget-control"
+          popupClassName="calendario-widget-select-dropdown"
         />
       </div>
 
