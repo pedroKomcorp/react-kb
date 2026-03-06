@@ -108,6 +108,7 @@ const ProjetosPage: React.FC = () => {
   const handleNovoProjetoCategoriaChange = (categoria: Projeto['categoria']) => {
     setNovoProjetoCategoria(categoria);
     if (categoria === 'SR') {
+      setNovoProjetoStatus('NI');
       setNovoProjetoRecorrenciaAtiva(true);
       setNovoProjetoRecorrenciaIntervaloDias((prev) => prev && prev > 0 ? prev : 30);
       setNovoProjetoRecorrenciaStatusReinicio((prev) => prev || 'NI');
@@ -373,23 +374,25 @@ const ProjetosPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status Inicial
-                </label>
-                <Select
-                  value={novoProjetoStatus}
-                  onChange={setNovoProjetoStatus}
-                  size="large"
-                  style={{ width: '100%' }}
-                  options={[
-                    { value: 'NI', label: '⏸️ Não Iniciado' },
-                    { value: 'EA', label: '▶️ Em Andamento' },
-                    { value: 'C', label: '✅ Concluído' },
-                    { value: 'P', label: '⏸️ Pausado' },
-                  ]}
-                />
-              </div>
+              {!isNovoProjetoServicoRecorrente && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status Inicial
+                  </label>
+                  <Select
+                    value={novoProjetoStatus}
+                    onChange={setNovoProjetoStatus}
+                    size="large"
+                    style={{ width: '100%' }}
+                    options={[
+                      { value: 'NI', label: '⏸️ Não Iniciado' },
+                      { value: 'EA', label: '▶️ Em Andamento' },
+                      { value: 'C', label: '✅ Concluído' },
+                      { value: 'P', label: '⏸️ Pausado' },
+                    ]}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

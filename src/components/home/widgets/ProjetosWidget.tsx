@@ -421,7 +421,7 @@ const ProjetosWidget: React.FC = () => {
 														}}
 													>
 														{projetosFiltrados.length === 0 ? (
-															<div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
+															<div className="w-full h-full flex items-center justify-center text-sm text-[#d1d5db]">
 																Nenhum projeto encontrado.
 															</div>
 														) : (

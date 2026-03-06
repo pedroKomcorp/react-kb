@@ -209,13 +209,10 @@ const CalendarioWidget: React.FC = () => {
       {/* Calendar */}
       <div className="flex-1 overflow-hidden">
         {filteredProjetos.length === 0 ? (
-          <div className="w-full h-full flex items-center justify-center text-gray-500">
+          <div className="w-full h-full flex items-center justify-center text-[#d1d5db]">
             <div className="text-center">
               <div className="text-2xl mb-2">📅</div>
               <div>Nenhum projeto encontrado</div>
-              <div className="text-sm mt-1 opacity-70">
-                Ajuste os filtros ou verifique se há projetos atribuídos a você
-              </div>
             </div>
           </div>
         ) : (

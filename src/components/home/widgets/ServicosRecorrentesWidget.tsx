@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Empty, List, Space, Spin, Tag, Typography, message } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { Button, Empty, Modal, Popconfirm, Space, Spin, Tag, Typography, message } from 'antd';
+import { CheckOutlined, ReloadOutlined, UndoOutlined } from '@ant-design/icons';
 import {
   getServicosRecorrentes,
-  reiniciarServicoRecorrente,
+  updateServicoRecorrente,
 } from '../../../services/servicosRecorrentes';
 import type { Projeto } from '../../../types/projeto';
 
@@ -41,7 +41,8 @@ const ServicosRecorrentesWidget: React.FC = () => {
   const [servicos, setServicos] = useState<Projeto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [restartingId, setRestartingId] = useState<number | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
+  const [selectedServico, setSelectedServico] = useState<Projeto | null>(null);
 
   const loadServicos = useCallback(async () => {
     setLoading(true);
@@ -78,21 +79,28 @@ const ServicosRecorrentesWidget: React.FC = () => {
     });
   }, [servicos]);
 
-  const handleReiniciar = async (servico: Projeto) => {
-    setRestartingId(servico.id);
+  const handleToggleConclusao = async (servico: Projeto) => {
+    const nextStatus: Projeto['status'] =
+      servico.status === 'C' ? servico.recorrencia_status_reinicio ?? 'EA' : 'C';
+
+    setUpdatingStatusId(servico.id);
     try {
-      await reiniciarServicoRecorrente(servico.id);
-      message.success(`Serviço "${servico.nome}" reiniciado com sucesso.`);
+      await updateServicoRecorrente(servico.id, { status: nextStatus });
+      message.success(
+        servico.status === 'C'
+          ? `Serviço "${servico.nome}" reaberto com sucesso.`
+          : `Serviço "${servico.nome}" concluído com sucesso.`
+      );
       await loadServicos();
-    } catch (restartError) {
-      console.error('Erro ao reiniciar serviço recorrente:', restartError);
+    } catch (statusError) {
+      console.error('Erro ao atualizar status do serviço recorrente:', statusError);
       message.error(
-        restartError instanceof Error
-          ? restartError.message
-          : 'Não foi possível reiniciar o serviço recorrente.'
+        statusError instanceof Error
+          ? statusError.message
+          : 'Não foi possível atualizar o status do serviço recorrente.'
       );
     } finally {
-      setRestartingId(null);
+      setUpdatingStatusId(null);
     }
   };
 
@@ -134,56 +142,112 @@ const ServicosRecorrentesWidget: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-full min-h-0 overflow-hidden">
-      <div className="flex items-center justify-between mb-2">
-        <Typography.Text type="secondary">{sortedServicos.length} serviços</Typography.Text>
-        <Button size="small" icon={<ReloadOutlined />} onClick={() => void loadServicos()}>
-          Atualizar
-        </Button>
+    <div className="w-full h-full min-h-0 overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 overflow-auto pr-1 widget-no-scrollbar">
+        <div className="servicos-recorrentes-grid grid gap-3">
+          {sortedServicos.map((servico) => (
+            <article
+              key={servico.id}
+              className="servicos-recorrentes-card rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+            >
+              <button
+                type="button"
+                className="w-full rounded-lg text-center transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                onClick={() => setSelectedServico(servico)}
+              >
+                <Typography.Text
+                  strong
+                  className="servicos-recorrentes-card-title block truncate text-center text-slate-900"
+                >
+                  {servico.nome}
+                </Typography.Text>
+              </button>
+
+              <div className="servicos-recorrentes-card-status mt-2 flex flex-wrap justify-center gap-2">
+                <Tag className="servicos-recorrentes-card-tag" color={statusColorMap[servico.status]}>
+                  {statusLabelMap[servico.status]}
+                </Tag>
+                {servico.recorrencia_ativa === false && <Tag color="default">Inativa</Tag>}
+              </div>
+
+              <div className="servicos-recorrentes-card-actions mt-3 flex flex-wrap justify-center gap-2">
+                <Button
+                  size="small"
+                  type="default"
+                  className="servicos-recorrentes-card-button servicos-recorrentes-card-button-details"
+                  onClick={() => setSelectedServico(servico)}
+                >
+                  Ver detalhes
+                </Button>
+                {servico.status === 'C' ? (
+                  <Button
+                    size="small"
+                    type="default"
+                    icon={<UndoOutlined />}
+                    className="servicos-recorrentes-card-button shrink-0"
+                    loading={updatingStatusId === servico.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleToggleConclusao(servico);
+                    }}
+                  >
+                    Desfazer
+                  </Button>
+                ) : (
+                  <Popconfirm
+                    title="Concluir serviço?"
+                    description="Isso marcará o serviço como concluído."
+                    okText="Concluir"
+                    cancelText="Cancelar"
+                    onConfirm={() => void handleToggleConclusao(servico)}
+                  >
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<CheckOutlined />}
+                      className="servicos-recorrentes-card-button shrink-0"
+                      loading={updatingStatusId === servico.id}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      Concluir
+                    </Button>
+                  </Popconfirm>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
 
-      <List
-        size="small"
-        className="max-h-full overflow-y-auto pr-1"
-        dataSource={sortedServicos}
-        renderItem={(servico) => (
-          <List.Item
-            key={servico.id}
-            style={{ alignItems: 'flex-start' }}
-            actions={[
-              <Button
-                key="reiniciar"
-                size="small"
-                type="text"
-                loading={restartingId === servico.id}
-                onClick={() => void handleReiniciar(servico)}
-              >
-                Reiniciar
-              </Button>,
-            ]}
-          >
-            <List.Item.Meta
-              title={
-                <Space size={8} wrap>
-                  <Typography.Text strong>{servico.nome}</Typography.Text>
-                  <Tag color={statusColorMap[servico.status]}>{statusLabelMap[servico.status]}</Tag>
-                  {servico.recorrencia_ativa === false && <Tag color="default">Inativa</Tag>}
-                </Space>
-              }
-              description={
-                <Space direction="vertical" size={0}>
-                  <Typography.Text type="secondary">
-                    Próxima execução: {formatDateTime(servico.recorrencia_proxima_execucao)}
-                  </Typography.Text>
-                  <Typography.Text type="secondary">
-                    Intervalo: {servico.recorrencia_intervalo_dias ?? '-'} dia(s)
-                  </Typography.Text>
-                </Space>
-              }
-            />
-          </List.Item>
-        )}
-      />
+      <Modal
+        open={!!selectedServico}
+        title={selectedServico?.nome}
+        footer={null}
+        onCancel={() => setSelectedServico(null)}
+      >
+        {selectedServico ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <Tag color={statusColorMap[selectedServico.status]}>
+                {statusLabelMap[selectedServico.status]}
+              </Tag>
+              {selectedServico.recorrencia_ativa === false && <Tag color="default">Inativa</Tag>}
+            </div>
+            <Typography.Paragraph className="mb-0">
+              {selectedServico.descricao || 'Sem descrição.'}
+            </Typography.Paragraph>
+            <Typography.Text type="secondary" className="block">
+              Próxima execução: {formatDateTime(selectedServico.recorrencia_proxima_execucao)}
+            </Typography.Text>
+            <Typography.Text type="secondary" className="block">
+              Última execução: {formatDateTime(selectedServico.recorrencia_ultima_execucao)}
+            </Typography.Text>
+            <Typography.Text type="secondary" className="block">
+              Intervalo: {selectedServico.recorrencia_intervalo_dias ?? '-'} dia(s)
+            </Typography.Text>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 };

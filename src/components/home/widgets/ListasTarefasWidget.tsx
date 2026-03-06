@@ -341,7 +341,7 @@ const ListasTarefasWidget: React.FC = () => {
         ) : !listas.length ? (
           <div className="flex-1 flex items-center justify-center">
             <Empty
-              description={<span className="text-white/75">Nenhuma lista criada</span>}
+              description="Nenhuma lista criada"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             >
               <Button
@@ -449,7 +449,7 @@ const ListasTarefasWidget: React.FC = () => {
               ) : itens.length === 0 ? (
                 <div className="w-full h-full flex items-center justify-center">
                   <Empty
-                    description={<span className="text-white/75">Sem itens nesta lista</span>}
+                    description="Sem itens nesta lista"
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                   />
                 </div>
